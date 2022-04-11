@@ -1,0 +1,54 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "principalID": {
+            "type": "string",
+            "metadata": {
+                "description": "CloudTeam.AI Agent Principal ID"
+            }
+        },
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/azure-finops/main/Onboarding/onboarding/",
+            "metadata": {
+                "description": "description"
+            }
+        },
+        "billingExportRoleDefID": {
+            "type": "string",
+            "metadata": {
+                "description": "Billing Export role definition ID"
+            }
+        }
+    },
+    "variables": {
+        "API": "2021-04-01",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "initializeTemplateURI": "[concat(variables('gitURI'), 'lighthouse/lighthouse.json')]"
+        }
+    },
+    "resources": [
+        {
+            "name": "lighthouse",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').initializeTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "billingExportRoleDefID": {
+                        "value": "[parameters('billingExportRoleDefID')]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

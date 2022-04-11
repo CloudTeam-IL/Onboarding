@@ -1,0 +1,97 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/azure-finops/main/Onboarding/",
+            "metadata": {
+                "description": "Official Git repo for CloudTeam.AI onboarding process."
+            }
+        },
+        "principalID": {
+            "type": "string",
+            "metadata": {
+                "description": "CloudTeam.AI Agent Principal ID"
+            }
+        }
+    },
+    "variables": {
+        "API": "2021-04-01",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
+            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
+            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+        },
+        "templatesNames": {
+            "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
+            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
+            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').initializeTemplateName]",
+            "apiVersion": "[variables('API')]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').initializeTemplateURI]"
+                },
+                "parameters": {
+                    "gitURI": {
+                        "value": "[concat(variables('gitURI'), 'initialize/')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').onboardingTemplateName]",
+            "apiVersion": "[variables('API')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').onboardingTemplateURI]"
+                },
+                "parameters": {
+                    "gitURI": {
+                        "value": "[concat(variables('gitURI'), 'onboarding/')]"
+                    },
+                    "principalID": {
+                        "value": "[parameters('principalID')]"
+                    },
+                    "billingExportRoleDef": {
+                        "value": "[reference(resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName).billingExportRBACDef)]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "[variables('templatesNames').finalizeTemplateName]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"
+            ],
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').finalizeTemplateURI]"
+                },
+                "parameters": {}
+            }
+        }
+    ],
+    "outputs": {}
+}

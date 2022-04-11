@@ -1,0 +1,85 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "roleName": {
+            "type": "string",
+            "metadata": {
+                "description": "Role definition name"
+            }
+        },
+        "description": {
+            "type": "string",
+            "metadata": {
+                "description": "Role definition description"
+            }
+        },
+        "type": {
+            "type": "string",
+            "defaultValue": "customRole",
+            "metadata": {
+                "description": "Role definition type"
+            }
+        },
+        "assignableScopes": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "assignable scopes array"
+            }
+        },
+        "permissions": {
+            "type": "array",
+            "metadata": {
+                "description": "Role Definition Permissions Object"
+            }
+        }
+    },
+    "variables": {
+        "roleDefAPI": "2018-01-01-preview",
+        "roleDefName": "[guid(tenant().tenantId, parameters('roleName'))]",
+        "copy": [
+            {
+                "name": "permissions",
+                "count": "[length(parameters('permissions'))]",
+                "input": [
+                    {
+                        "actions": "[if(contains(parameters('permissions')[copyIndex()], 'actions'), parameters('permissions')[copyIndex()].actions, '[]')]",
+                        "dataActions": "[if(contains(parameters('permissions')[copyIndex()], 'dataActions'), parameters('permissions')[copyIndex()].dataActions, '[]')]",
+                        "notActions": "[if(contains(parameters('permissions')[copyIndex()], 'notActions'), parameters('permissions')[copyIndex()].notActions, '[]')]",
+                        "notDataActions": "[if(contains(parameters('permissions')[copyIndex()], 'notDataActions'), parameters('permissions')[copyIndex()].notDataActions, '[]')]"
+                    }
+                ]
+            }
+        ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/roleDefinitions",
+            "apiVersion": "[variables('roleDefAPI')]",
+            "name": "[variables('roleDefName')]",
+            "properties": {
+                "roleName": "[parameters('roleName')]",
+                "type": "[parameters('type')]",
+                "assignableScopes": "[parameters('assignableScopes')]",
+                "description": "[parameters('description')]",
+                "permissions": "[variables('permissions')]"
+            }
+        }
+    ],
+    "outputs": {
+        "roleDefResourceID": {
+            "type": "secureString",
+            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName'))]"
+        },
+        "roleDefName": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName')).name)]"
+        },
+        "billingExportRoleDefID": {
+            "condition": "[equals(parameters('roleName'), 'Cost Management Export')]",
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName')).name)]"
+        }
+    }
+}

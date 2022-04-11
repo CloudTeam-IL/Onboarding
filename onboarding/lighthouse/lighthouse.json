@@ -1,0 +1,258 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "managedByName": {
+            "type": "string",
+            "defaultValue": "CloudTeam.AI",
+            "metadata": {
+                "descriptions": "Company's name"
+            }
+        },
+        "managedByTenantId": {
+            "type": "string",
+            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
+            "metadata": {
+                "description": "CloudTeam.AI Tenant ID"
+            }
+        },
+        "policyDefinitionName": {
+            "type": "string",
+            "defaultValue": "CloudTeam.AI Onboarding",
+            "metadata": {
+                "description": "Policy Definition Name"
+            }
+        },
+        "billingExportRoleDefID": {
+            "type": "string",
+            "metadata": {
+                "description": "Additional RBAC Definitions"
+            }
+        },
+        "proactiveEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "ProActive Services enabled/disabled/"
+            }
+        },
+        "readersEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "View-Only mode enabled/disabled/"
+            }
+        },
+        "readerPrincipalID": {
+            "type": "string",
+            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "metadata": {
+                "description": "CloudTeam.AI Reader Agent Principal ID"
+            }
+        },
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        }
+    },
+    "variables": {
+        "PolicyAPI": "2018-05-01",
+        "rbacOwner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+        "rbacContributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+        "rbacReader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+        "rbacBillingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
+        "managedByDescription": "[concat(parameters('managedByName'), ' Managed Services')]",
+        "readersPrincipalRBACDefs": "[createArray(variables('rbacReader'), variables('rbacBillingReader'), parameters('billingExportRoleDefID'))]",
+        "proactivePrincipalRBACDefs": "[createArray(variables('rbacContributor'))]",
+        "copy": [
+            {
+                "name": "readersPrincipalBlock",
+                "condition": "[parameters('readersEnabled')]",
+                "count": "[length(variables('readersPrincipalRBACDefs'))]",
+                "input": [
+                    {
+                        "principalId": "[parameters('readerPrincipalID')]",
+                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
+                        "roleDefinitionId": "[variables('readersPrincipalRBACDefs')[copyIndex()]]"
+                    }
+                ]
+            },
+            {
+                "name": "proactivePrincipalBlock",
+                "condition": "[parameters('proactiveEnabled')]",
+                "count": "[length(variables('proactivePrincipalRBACDefs'))]",
+                "input": [
+                    {
+                        "principalId": "[parameters('proactivePrincipalID')]",
+                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
+                        "roleDefinitionId": "[variables('proactivePrincipalRBACDefs')[copyIndex()]]"
+                    }
+                ]
+            }
+        ],
+        "policyProperties": {
+            "description": "[concat('Policy to enforce Lighthouse on subscriptions, delegating access to', parameters('managedByName'))]",
+            "displayName": "[concat('onboard all subs to', parameters('managedByName'))]",
+            "mode": "All",
+            "policyType": "Custom"
+        },
+        "managedByAuthorizations": "[union(variables('readersPrincipalBlock'), variables('proactivePrincipalBlock'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/policyDefinitions",
+            "apiVersion": "[variables('PolicyAPI')]",
+            "name": "[parameters('policyDefinitionName')]",
+            "properties": {
+                "description": "[variables('policyProperties').description]",
+                "displayName": "[variables('policyProperties').displayName]",
+                "mode": "[variables('policyProperties').mode]",
+                "policyType": "[variables('policyProperties').policyType]",
+                "parameters": {
+                    "managedByTenantId": {
+                        "type": "string",
+                        "defaultValue": "[parameters('managedByTenantId')]",
+                        "metadata": {
+                            "description": "CloudTeam.AI Tenant ID"
+                        }
+                    },
+                    "managedByName": {
+                        "type": "string",
+                        "defaultValue": "[parameters('managedByName')]",
+                        "metadata": {
+                            "description": "Company's name"
+                        }
+                    },
+                    "managedByDescription": {
+                        "type": "string",
+                        "defaultValue": "[variables('managedByDescription')]",
+                        "metadata": {
+                            "description": "CloudTeam.AI Group Readers"
+                        }
+                    },
+                    "managedByAuthorizations": {
+                        "type": "object",
+                        "defaultValue": "[variables('managedByAuthorizations')]",
+                        "metadata": {
+                            "description": "AuthZ"
+                        }
+                    },
+                    "effect": {
+                        "type": "string",
+                        "defaultValue": "deployIfNotExists",
+                        "allowedValues": [
+                            "deployIfNotExists",
+                            "auditIfNotExists"
+                        ],
+                        "metadata": {
+                            "description": "Audit Or Enforce mode"
+                        }
+                    }
+                },
+                "policyRule": {
+                    "if": {
+                        "allOf": [
+                            {
+                                "field": "type",
+                                "equals": "Microsoft.Resources/subscriptions"
+                            }
+                        ]
+                    },
+                    "then": {
+                        "effect": "[[parameters('effect')]",
+                        "details": {
+                            "type": "Microsoft.ManagedServices/registrationDefinitions",
+                            "deploymentScope": "subscription",
+                            "existenceScope": "subscription",
+                            "roleDefinitionIds": [
+                                "[concat('/providers/Microsoft.Authorization/roleDefinitions/', variables('rbacOwner'))]"
+                            ],
+                            "existenceCondition": {
+                                "allOf": [
+                                    {
+                                        "field": "type",
+                                        "equals": "Microsoft.ManagedServices/registrationDefinitions"
+                                    },
+                                    {
+                                        "field": "Microsoft.ManagedServices/registrationDefinitions/managedByTenantId",
+                                        "equals": "[[parameters('managedByTenantId')]"
+                                    }
+                                ]
+                            },
+                            "deployment": {
+                                "location": "westeurope",
+                                "properties": {
+                                    "mode": "incremental",
+                                    "parameters": {
+                                        "managedByTenantId": {
+                                            "value": "[[parameters('managedByTenantId')]"
+                                        },
+                                        "managedByName": {
+                                            "value": "[[parameters('managedByName')]"
+                                        },
+                                        "managedByDescription": {
+                                            "value": "[[parameters('managedByDescription')]"
+                                        },
+                                        "managedByAuthorizations": {
+                                            "value": "[[createArray(parameters('managedByAuthorizations'))]"
+                                        }
+                                    },
+                                    "template": {
+                                        "$schema": "https://schema.management.azure.com/2018-05-01/subscriptionDeploymentTemplate.json#",
+                                        "contentVersion": "1.0.0.0",
+                                        "parameters": {
+                                            "managedByTenantId": {
+                                                "type": "String"
+                                            },
+                                            "managedByName": {
+                                                "type": "String"
+                                            },
+                                            "managedByDescription": {
+                                                "type": "String"
+                                            },
+                                            "managedByAuthorizations": {
+                                                "type": "Array"
+                                            }
+                                        },
+                                        "variables": {
+                                            "managedByRegistrationName": "[[guid(parameters('managedByName'))]",
+                                            "managedByAssignmentName": "[[guid(parameters('managedByName'))]",
+                                            "lightHouseAPI": "2019-06-01"
+                                        },
+                                        "resources": [
+                                            {
+                                                "type": "Microsoft.ManagedServices/registrationDefinitions",
+                                                "apiVersion": "[[variables('lightHouseAPI')]",
+                                                "name": "[[variables('managedByRegistrationName')]",
+                                                "properties": {
+                                                    "registrationDefinitionName": "[[parameters('managedByName')]",
+                                                    "description": "[[parameters('managedByDescription')]",
+                                                    "managedByTenantId": "[[parameters('managedByTenantId')]",
+                                                    "authorizations": "[[parameters('managedByAuthorizations')]"
+                                                }
+                                            },
+                                            {
+                                                "type": "Microsoft.ManagedServices/registrationAssignments",
+                                                "apiVersion": "[[variables('lightHouseAPI')]",
+                                                "name": "[[variables('managedByAssignmentName')]",
+                                                "dependsOn": [
+                                                    "[[resourceId('Microsoft.ManagedServices/registrationDefinitions/', variables('managedByRegistrationName'))]"
+                                                ],
+                                                "properties": {
+                                                    "registrationDefinitionId": "[[resourceId('Microsoft.ManagedServices/registrationDefinitions/',variables('managedByRegistrationName'))]"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

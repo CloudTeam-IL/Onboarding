@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/azure-finops/main/Onboarding/initialize",
+            "metadata": {
+                "description": "Official Git repo for CloudTeam.AI onboarding process."
+            }
+        }
+    },
+    "functions": [],
+    "variables": {
+        "API": "2021-04-01",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "resourceGroupTemplateURI": "[concat(variables('gitURI'), 'resourceGroups/resourcegroup.json')]",
+            "roleDefinitionListTemplateURI": "[concat(variables('gitURI'), 'lists/roleDefinition/roleDefinitionMGList.json')]",
+            "roleDefinitionTemplateURI": "[concat(variables('gitURI'), 'modules/roleDefinition/roleDefinitionMG.json')]",
+            "automationAccountTemplateURI": "[concat(variables('gitURI'), 'automationAccount/automationaccount.json')]",
+            "storageTemplateURI": "[concat(variables('gitURI'), 'storageAccount/storageaccounts.json')]"
+        }
+    },
+    "resources": [
+        {
+            "name": "roleDefList",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').roleDefinitionListTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "name": "roleDefs",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'roleDefList')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').roleDefinitionTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "list": "[reference(resourceId('Microsoft.Resources/deployments', 'roleDefList').roleDefList)]"
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "billingExportRBACDef": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'roleDefs').billingExportRBACDef)]"
+        }
+    }
+}
