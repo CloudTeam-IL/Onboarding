@@ -27,9 +27,9 @@
     "variables": {
         "API": "2021-04-01",
         "policyAPI": "2019-09-01",
-        "location": "[deployment().location]",
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
+        "location": "[deployment().location]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
         "templatesProperties": {
             "contentVersion": "1.0.0.0",

@@ -8,6 +8,7 @@
             {
                 "roleName": "Cost Management Export",
                 "type": "customRule",
+                "assignableScopes": [],
                 "description": "Can view, create and update cost management exports",
                 "permissions": [
                     {
