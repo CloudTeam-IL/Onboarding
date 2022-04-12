@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "list": {
-            "type": "object",
+            "type": "array",
             "metadata": {
                 "description": "Role definitions"
             }
