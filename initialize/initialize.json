@@ -4,9 +4,9 @@
     "parameters": {
         "gitURI": {
             "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/azure-finops/main/Onboarding/initialize",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/initialize",
             "metadata": {
-                "description": "Official Git repo for CloudTeam.AI onboarding process."
+                "description": "Official Git repo for CloudTeam.AI onboarding process (Initialize Phase)."
             }
         }
     },
@@ -52,7 +52,9 @@
                     "contentVersion": "[variables('templatesProperties').contentVersion]"
                 },
                 "parameters": {
-                    "list": "[reference(resourceId('Microsoft.Resources/deployments', 'roleDefList').roleDefList)]"
+                    "list": {
+                        "value": "[reference('roleDefList', variables('API')).outputs.roleDefList.value]"
+                    }
                 }
             }
         }
@@ -60,7 +62,7 @@
     "outputs": {
         "billingExportRBACDef": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'roleDefs').billingExportRBACDef)]"
+            "value": "[reference('roleDef', variables('API')).outputs.billingExportRBACDef.value]"
         }
     }
 }

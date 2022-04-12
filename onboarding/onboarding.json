@@ -10,7 +10,7 @@
         },
         "gitURI": {
             "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/azure-finops/main/Onboarding/onboarding/",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/onboarding/",
             "metadata": {
                 "description": "description"
             }

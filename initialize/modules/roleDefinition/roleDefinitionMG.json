@@ -2,84 +2,61 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "roleName": {
-            "type": "string",
-            "metadata": {
-                "description": "Role definition name"
-            }
-        },
-        "description": {
-            "type": "string",
-            "metadata": {
-                "description": "Role definition description"
-            }
-        },
-        "type": {
-            "type": "string",
-            "defaultValue": "customRole",
-            "metadata": {
-                "description": "Role definition type"
-            }
-        },
-        "assignableScopes": {
-            "type": "array",
-            "defaultValue": [],
-            "metadata": {
-                "description": "assignable scopes array"
-            }
-        },
-        "permissions": {
+        "list": {
             "type": "array",
             "metadata": {
-                "description": "Role Definition Permissions Object"
+                "description": "List of role definitions"
             }
         }
     },
     "variables": {
-        "roleDefAPI": "2018-01-01-preview",
-        "roleDefName": "[guid(tenant().tenantId, parameters('roleName'))]",
-        "copy": [
-            {
-                "name": "permissions",
-                "count": "[length(parameters('permissions'))]",
-                "input": [
-                    {
-                        "actions": "[if(contains(parameters('permissions')[copyIndex()], 'actions'), parameters('permissions')[copyIndex()].actions, '[]')]",
-                        "dataActions": "[if(contains(parameters('permissions')[copyIndex()], 'dataActions'), parameters('permissions')[copyIndex()].dataActions, '[]')]",
-                        "notActions": "[if(contains(parameters('permissions')[copyIndex()], 'notActions'), parameters('permissions')[copyIndex()].notActions, '[]')]",
-                        "notDataActions": "[if(contains(parameters('permissions')[copyIndex()], 'notDataActions'), parameters('permissions')[copyIndex()].notDataActions, '[]')]"
-                    }
-                ]
-            }
-        ]
+        "roleDefAPI": "2018-01-01-preview"
+        // "copy": [
+        //     {
+        //         "name": "permissions",
+        //         "count": "[length(parameters('permissions'))]",
+        //         "input": [
+        //             {
+        //                 "actions": "[if(contains(parameters('permissions')[copyIndex()], 'actions'), parameters('permissions')[copyIndex()].actions, json('null'))]",
+        //                 "dataActions": "[if(contains(parameters('permissions')[copyIndex()], 'dataActions'), parameters('permissions')[copyIndex()].dataActions, json('null'))]",
+        //                 "notActions": "[if(contains(parameters('permissions')[copyIndex()], 'notActions'), parameters('permissions')[copyIndex()].notActions, json('null'))]",
+        //                 "notDataActions": "[if(contains(parameters('permissions')[copyIndex()], 'notDataActions'), parameters('permissions')[copyIndex()].notDataActions, json('null'))]"
+        //             }
+        //         ]
+        //     }
+        // ]
     },
     "resources": [
         {
             "type": "Microsoft.Authorization/roleDefinitions",
             "apiVersion": "[variables('roleDefAPI')]",
-            "name": "[variables('roleDefName')]",
+            "name": "[guid(tenant().tenantId, parameters('list')[copyIndex()].roleName)]",
             "properties": {
-                "roleName": "[parameters('roleName')]",
-                "type": "[parameters('type')]",
-                "assignableScopes": "[parameters('assignableScopes')]",
-                "description": "[parameters('description')]",
-                "permissions": "[variables('permissions')]"
+                "roleName": "[parameters('list')[copyIndex()].roleName]",
+                "type": "[if(not(empty(parameters('list')[copyIndex()].roleName)), parameters('list')[copyIndex()].roleName,'customRole')]",
+                "assignableScopes": "[if(not(empty(parameters('list')[copyIndex()].assignableScopes)), parameters('list')[copyIndex()].assignableScopes, json('null'))]",
+                "description": "[if(not(empty(parameters('list')[copyIndex()].description)), parameters('list')[copyIndex()].description, json('null'))]",
+                "permissions": "[if(not(empty(parameters('list')[copyIndex()].permissions)), parameters('list')[copyIndex()].permissions, json('null'))]"
+            },
+            "copy": {
+                "name": "rdcopy",
+                "count": "[length(parameters('list'))]"
             }
         }
     ],
     "outputs": {
         "roleDefResourceID": {
-            "type": "secureString",
-            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName'))]"
+            "type": "string",
+            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list')[copyIndex()].roleName))]"
         },
         "roleDefName": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName')).name)]"
+            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list')[copyIndex()].roleName)).name)]"
         },
         "billingExportRoleDefID": {
-            "condition": "[equals(parameters('roleName'), 'Cost Management Export')]",
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName')).name)]"
+            "condition": "[equals(parameters('list').roleName, 'Cost Management Export')]",
+            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list')[copyIndex()].roleName))).outputs.billingExportRoleDefID.value]"
         }
     }
 }

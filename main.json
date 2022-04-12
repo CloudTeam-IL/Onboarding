@@ -9,10 +9,16 @@
                 "description": "Official Git repo for CloudTeam.AI onboarding process."
             }
         },
-        "principalID": {
+        "proactivePrincipalID": {
             "type": "string",
             "metadata": {
-                "description": "CloudTeam.AI Agent Principal ID"
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        },
+        "readersPrincipalID": {
+            "type": "string",
+            "metadata": {
+                "description": "CloudTeam.AI Readers Agent Principal ID"
             }
         }
     },
@@ -67,11 +73,14 @@
                     "gitURI": {
                         "value": "[concat(variables('gitURI'), 'onboarding/')]"
                     },
-                    "principalID": {
-                        "value": "[parameters('principalID')]"
+                    "proactivePrincipalID": {
+                        "value": "[parameters('proactivePrincipalID')]"
+                    },
+                    "readersPrincipalID": {
+                        "value": "[parameters('readersPrincipalID')]"
                     },
                     "billingExportRoleDef": {
-                        "value": "[reference(resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName).billingExportRBACDef)]"
+                        "value": "[reference(resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName).outputs.billingExportRBACDef.value)]"
                     }
                 }
             }
