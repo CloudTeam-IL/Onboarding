@@ -38,13 +38,17 @@
             "type": "Microsoft.Authorization/roleDefinitions",
             "apiVersion": "[variables('roleDefAPI')]",
             "location": "[parameters('location')]",
-            "name": "[guid(tenant().tenantId, parameters('list').roleName)]",
+            "name": "[guid(tenant().tenantId, parameters('list')[copyIndex()].roleName)]",
             "properties": {
-                "roleName": "[parameters('list').roleName]",
-                "type": "[if(not(empty(parameters('list').roleName)), parameters('list').roleName,'customRole')]",
-                "assignableScopes": "[if(not(empty(parameters('list').assignableScopes)), parameters('list').assignableScopes, json('null'))]",
-                "description": "[if(not(empty(parameters('list').description)), parameters('list').description, json('null'))]",
-                "permissions": "[if(not(empty(parameters('list').permissions)), parameters('list').permissions, json('null'))]"
+                "roleName": "[parameters('list')[copyIndex()].roleName]",
+                "type": "[if(not(empty(parameters('list')[copyIndex()].roleName)), parameters('list')[copyIndex()].roleName,'customRole')]",
+                "assignableScopes": "[if(not(empty(parameters('list')[copyIndex()].assignableScopes)), parameters('list')[copyIndex()].assignableScopes, json('null'))]",
+                "description": "[if(not(empty(parameters('list')[copyIndex()].description)), parameters('list')[copyIndex()].description, json('null'))]",
+                "permissions": "[if(not(empty(parameters('list')[copyIndex()].permissions)), parameters('list')[copyIndex()].permissions, json('null'))]"
+            },
+            "copy": {
+                "name": "rdcopy",
+                "count": "[length(parameters('list'))]"
             }
         }
     ],
@@ -59,8 +63,8 @@
         },
         "billingExportRoleDefID": {
             "type": "string",
-            "condition": "[equals(parameters('list').roleName, 'Cost Management Export')]",
-            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list').roleName))).outputs.billingExportRoleDefID.value]"
+            "condition": "[contains(parameters('list').roleName, 'Cost Management Export')]",
+            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, 'Cost Management Export'))).id]"
         }
     }
 }

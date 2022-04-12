@@ -59,20 +59,16 @@
                 },
                 "parameters": {
                     "list": {
-                        "value": "[copyIndex(reference('roleDefList', variables('API')).outputs.roleDefList.value)]"
+                        "value": "[reference('roleDefList', variables('API')).outputs.roleDefList.value]"
                     }
                 }
-            },
-            "copy": {
-                "name": "rdcopy",
-                "count": "[length(reference('roleDefList', variables('API')).outputs.roleDefList.value)]"
             }
         }
     ],
     "outputs": {
         "billingExportRBACDef": {
             "type": "string",
-            "value": "[reference('roleDef', variables('API')).outputs.billingExportRBACDef.value]"
+            "value": "[reference('roleDefList', variables('API')).outputs.billingExportRBACDef.value]"
         }
     }
 }
