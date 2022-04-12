@@ -11,14 +11,14 @@
         },
         "proactivePrincipalID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
             "metadata": {
                 "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
         },
         "readersPrincipalID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "c4ee51f4-2fb9-46b7-bd9c-050926b69726",
             "metadata": {
                 "description": "CloudTeam.AI Readers Agent Principal ID"
             }
