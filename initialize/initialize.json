@@ -8,6 +8,13 @@
             "metadata": {
                 "description": "Official Git repo for CloudTeam.AI onboarding process (Initialize Phase)."
             }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
         }
     },
     "functions": [],
@@ -25,6 +32,7 @@
         {
             "name": "roleDefList",
             "type": "Microsoft.Resources/deployments",
+            "location": "[parameters('location')]",
             "apiVersion": "[variables('API')]",
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
@@ -38,6 +46,7 @@
         {
             "name": "roleDefs",
             "type": "Microsoft.Resources/deployments",
+            "location": "[parameters('location')]",
             "apiVersion": "[variables('API')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', 'roleDefList')]"

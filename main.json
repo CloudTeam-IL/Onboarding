@@ -27,6 +27,7 @@
     "variables": {
         "API": "2021-04-01",
         "policyAPI": "2019-09-01",
+        "location": "[deployment().location]",
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
@@ -45,6 +46,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').initializeTemplateName]",
+            "location": "[variables('location')]",
             "apiVersion": "[variables('API')]",
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
@@ -55,6 +57,9 @@
                 "parameters": {
                     "gitURI": {
                         "value": "[concat(variables('gitURI'), 'initialize/')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
                     }
                 }
             }
@@ -63,6 +68,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').onboardingTemplateName]",
             "apiVersion": "[variables('API')]",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
             ],
@@ -76,20 +82,23 @@
                     "gitURI": {
                         "value": "[concat(variables('gitURI'), 'onboarding/')]"
                     },
-                    "policyName": {
-                        "value": "[variables('policyName')]"
-                    },
                     "proactivePrincipalID": {
                         "value": "[parameters('proactivePrincipalID')]"
                     },
                     "readersPrincipalID": {
                         "value": "[parameters('readersPrincipalID')]"
                     },
+                    "policyName": {
+                        "value": "[variables('policyName')]"
+                    },
                     "billingExportRoleDef": {
                         "value": "[reference(variables('templatesNames').initializeTemplateName, variables('API')).outputs.billingExportRBACDef.value]"
                     },
                     "managedByTenantID": {
                         "value": "[variables('CloudTeamTenantID')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
                     }
                 }
             }
@@ -97,6 +106,7 @@
         {
             "type": "Microsoft.Authorization/policyAssignments",
             "name": "[variables('policyName')]",
+            "location": "[variables('location')]",
             "apiVersion": "[variables('policyAPI')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"

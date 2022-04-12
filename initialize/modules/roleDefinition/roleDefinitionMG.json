@@ -7,6 +7,13 @@
             "metadata": {
                 "description": "Role definitions"
             }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
         }
     },
     "variables": {
@@ -30,6 +37,7 @@
         {
             "type": "Microsoft.Authorization/roleDefinitions",
             "apiVersion": "[variables('roleDefAPI')]",
+            "location": "[parameters('location')]",
             "name": "[guid(tenant().tenantId, parameters('list').roleName)]",
             "properties": {
                 "roleName": "[parameters('list').roleName]",

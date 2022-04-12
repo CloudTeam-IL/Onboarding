@@ -11,6 +11,13 @@
         },
         "list": {
             "type": "object"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
         }
     },
     "variables": {
@@ -27,6 +34,7 @@
         {
             "type": "Microsoft.Authorization/policyDefinitions",
             "apiVersion": "[variables('PolicyAPI')]",
+            "location": "[parameters('location')]",
             "name": "[parameters('policyName')]",
             "properties": {
                 "description": "[variables('policyProperties').description]",

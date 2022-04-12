@@ -40,6 +40,13 @@
             "metadata": {
                 "description": "CloudTeam.AI Tenant ID"
             }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
         }
     },
     "variables": {
@@ -98,6 +105,9 @@
                     },
                     "list": {
                         "value": "[reference('lighthouseList', variables('API')).outputs.lighthouseList.value]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
                     }
                 }
             }
