@@ -68,7 +68,7 @@
     "outputs": {
         "billingExportRBACDef": {
             "type": "string",
-            "value": "[reference('roleDefList', variables('API')).outputs.billingExportRBACDef.value]"
+            "value": "[first(reference('roleDefList', variables('API')).outputs.billingExportRBACDef.value)]"
         }
     }
 }
