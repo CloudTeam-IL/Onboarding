@@ -59,10 +59,9 @@
         },
         "billingExportRoleDefID": {
             "type": "array",
-            "condition": "[equals(parameters('list')[copyIndex()].roleName, 'Cost Management Export')]",
             "copy": {
                 "count": "[length(parameters('list'))]",
-                "input": "[resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, 'Cost Management Export'))]"
+                "input": "[if(equals(parameters('list')[copyIndex()].roleName, 'Cost Management Export'),resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, 'Cost Management Export')), json('null'))]"
             }
         }
     }
