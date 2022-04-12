@@ -41,7 +41,7 @@
             "name": "[guid(tenant().tenantId, parameters('list')[copyIndex()].roleName)]",
             "properties": {
                 "roleName": "[parameters('list')[copyIndex()].roleName]",
-                "type": "[if(not(empty(parameters('list')[copyIndex()].type)), parameters('list')[copyIndex()].type,'customRole')]",
+                "type": "[if(not(empty(parameters('list')[copyIndex()].type)), parameters('list')[copyIndex()].type, 'customRule')]",
                 "assignableScopes": "[if(not(empty(parameters('list')[copyIndex()].assignableScopes)), parameters('list')[copyIndex()].assignableScopes, json('null'))]",
                 "description": "[if(not(empty(parameters('list')[copyIndex()].description)), parameters('list')[copyIndex()].description, json('null'))]",
                 "permissions": "[if(not(empty(parameters('list')[copyIndex()].permissions)), parameters('list')[copyIndex()].permissions, json('null'))]"
