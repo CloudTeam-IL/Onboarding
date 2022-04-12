@@ -22,30 +22,16 @@
                 "description": "CloudTeam.AI Tenant ID"
             }
         },
-        "proactiveEnabled": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "ProActive Services enabled/disabled/"
-            }
-        },
-        "readersEnabled": {
-            "type": "bool",
-            "defaultValue": true,
-            "metadata": {
-                "description": "View-Only mode enabled/disabled/"
-            }
-        },
         "readerPrincipalID": {
             "type": "string",
-            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "defaultValue": "",
             "metadata": {
                 "description": "CloudTeam.AI Reader Agent Principal ID"
             }
         },
         "proactivePrincipalID": {
             "type": "string",
-            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "defaultValue": "",
             "metadata": {
                 "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
@@ -63,7 +49,8 @@
         "copy": [
             {
                 "name": "readersAuthorizations",
-                "count": "[if(parameters('readersEnabled'), length(variables('readersPremissions')), 0)]",
+                "condition": "[not(empty(parameters('readerPrincipalID')))]",
+                "count": "[length(variables('readersPremissions'))]",
                 "input": [
                     {
                         "principalId": "[parameters('readerPrincipalID')]",
@@ -74,7 +61,8 @@
             },
             {
                 "name": "proActiveAuthorizations",
-                "count": "[if(parameters('proactiveEnabled'), length(variables('proActivePremissions')), 0)]",
+                "condition": "[not(empty(parameters('proactivePrincipalID')))]",
+                "count": "[length(variables('proActivePremissions'))]",
                 "input": [
                     {
                         "principalId": "[parameters('proactivePrincipalID')]",

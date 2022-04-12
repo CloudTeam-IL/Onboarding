@@ -2,9 +2,9 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "policyDefinitionName": {
+        "policyName": {
             "type": "string",
-            "defaultValue": "CloudTeam.AI Onboarding",
+            "defaultValue": "CloudTeam.AI FinOps",
             "metadata": {
                 "description": "Policy Definition Name"
             }
@@ -27,7 +27,7 @@
         {
             "type": "Microsoft.Authorization/policyDefinitions",
             "apiVersion": "[variables('PolicyAPI')]",
-            "name": "[parameters('policyDefinitionName')]",
+            "name": "[parameters('policyName')]",
             "properties": {
                 "description": "[variables('policyProperties').description]",
                 "displayName": "[variables('policyProperties').displayName]",
@@ -180,7 +180,7 @@
     "outputs": {
         "policyDefID": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.Authorization/policyDefinitions', parameters('policyDefinitionName'))).id]"
+            "value": "[reference(resourceId('Microsoft.Authorization/policyDefinitions', parameters('policyName'))).id]"
         }
     }
 }

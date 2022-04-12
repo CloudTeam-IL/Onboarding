@@ -27,6 +27,19 @@
             "metadata": {
                 "description": "Billing Export role definition ID"
             }
+        },
+        "policyName": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            }
+        },
+        "managedByTenantId": {
+            "type": "string",
+            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
+            "metadata": {
+                "description": "CloudTeam.AI Tenant ID"
+            }
         }
     },
     "variables": {
@@ -54,8 +67,14 @@
                     "billingExportRoleDefID": {
                         "value": "[parameters('billingExportRoleDefID')]"
                     },
-                    "readers": {
-                        "value": "value"
+                    "proactivePrincipalID": {
+                        "value": "[parameters('proactivePrincipalID')]"
+                    },
+                    "readersPrincipalID": {
+                        "value": "[parameters('readersPrincipalID')]"
+                    },
+                    "managedByTenantId": {
+                        "value": "[parameters('managedByTenantId')]"
                     }
                 }
             }
@@ -74,6 +93,9 @@
                     "contentVersion": "[variables('templatesProperties').contentVersion]"
                 },
                 "parameters": {
+                    "policyName": {
+                        "value": "[parameters('policyName')]"
+                    },
                     "list": {
                         "value": "[reference('lighthouseList', variables('API')).outputs.lighthouseList.value]"
                     }
