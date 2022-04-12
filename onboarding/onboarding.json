@@ -2,17 +2,24 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "principalID": {
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        },
+        "readersPrincipalID": {
             "type": "string",
             "metadata": {
-                "description": "CloudTeam.AI Agent Principal ID"
+                "description": "CloudTeam.AI Readers Agent Principal ID"
             }
         },
         "gitURI": {
             "type": "string",
             "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/onboarding/",
             "metadata": {
-                "description": "description"
+                "description": "Official Git repo for CloudTeam.AI onboarding process (Onboarding Phase)."
             }
         },
         "billingExportRoleDefID": {
@@ -28,27 +35,56 @@
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
-            "initializeTemplateURI": "[concat(variables('gitURI'), 'lighthouse/lighthouse.json')]"
+            "lighthouseListTemplateURI": "[concat(variables('gitURI'), 'lists/lighthouse/lighthouseList.json')]",
+            "lighthouseTemplateURI": "[concat(variables('gitURI'), 'modules/lighthouse/lighthouse.json')]"
         }
     },
     "resources": [
         {
-            "name": "lighthouse",
+            "name": "lighthouseList", // Add relevant parameters
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
-                    "uri": "[variables('templatesProperties').initializeTemplateURI]",
+                    "uri": "[variables('templatesProperties').lighthouseListTemplateURI]",
                     "contentVersion": "[variables('templatesProperties').contentVersion]"
                 },
                 "parameters": {
                     "billingExportRoleDefID": {
                         "value": "[parameters('billingExportRoleDefID')]"
+                    },
+                    "readers": {
+                        "value": "value"
+                    }
+                }
+            }
+        },
+        {
+            "name": "lighthouse",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'lighthouseList')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').lighthouseTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "list": {
+                        "value": "[reference('lighthouseList', variables('API')).outputs.lighthouseList.value]"
                     }
                 }
             }
         }
     ],
-    "outputs": {}
+    "outputs": {
+        "policyDefID": {
+            "type": "string",
+            "value": "[reference('lighthouse', variables('API')).outputs.policyDefID.value]"
+        }
+    }
 }

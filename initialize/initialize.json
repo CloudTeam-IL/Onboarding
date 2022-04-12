@@ -17,11 +17,8 @@
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
-            "resourceGroupTemplateURI": "[concat(variables('gitURI'), 'resourceGroups/resourcegroup.json')]",
             "roleDefinitionListTemplateURI": "[concat(variables('gitURI'), 'lists/roleDefinition/roleDefinitionMGList.json')]",
-            "roleDefinitionTemplateURI": "[concat(variables('gitURI'), 'modules/roleDefinition/roleDefinitionMG.json')]",
-            "automationAccountTemplateURI": "[concat(variables('gitURI'), 'automationAccount/automationaccount.json')]",
-            "storageTemplateURI": "[concat(variables('gitURI'), 'storageAccount/storageaccounts.json')]"
+            "roleDefinitionTemplateURI": "[concat(variables('gitURI'), 'modules/roleDefinition/roleDefinitionMG.json')]"
         }
     },
     "resources": [
@@ -53,9 +50,13 @@
                 },
                 "parameters": {
                     "list": {
-                        "value": "[reference('roleDefList', variables('API')).outputs.roleDefList.value]"
+                        "value": "[copyIndex(reference('roleDefList', variables('API')).outputs.roleDefList.value)]"
                     }
                 }
+            },
+            "copy": {
+                "name": "rdcopy",
+                "count": "[length(reference('roleDefList', variables('API')).outputs.roleDefList.value)]"
             }
         }
     ],

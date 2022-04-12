@@ -1,0 +1,101 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "billingExportRoleDefID": {
+            "type": "string",
+            "metadata": {
+                "description": "Billing Export Custom Role ID"
+            }
+        },
+        "managedByName": {
+            "type": "string",
+            "defaultValue": "CloudTeam.AI",
+            "metadata": {
+                "descriptions": "Company's name"
+            }
+        },
+        "managedByTenantId": {
+            "type": "string",
+            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
+            "metadata": {
+                "description": "CloudTeam.AI Tenant ID"
+            }
+        },
+        "proactiveEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "ProActive Services enabled/disabled/"
+            }
+        },
+        "readersEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "View-Only mode enabled/disabled/"
+            }
+        },
+        "readerPrincipalID": {
+            "type": "string",
+            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "metadata": {
+                "description": "CloudTeam.AI Reader Agent Principal ID"
+            }
+        },
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        }
+    },
+    "variables": {
+        "RBACBuiltInRoles": {
+            "owner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+            "contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+            "reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+            "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64"
+        },
+        "readersPremissions": "[createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, parameters('billingExportRoleDefID'))]",
+        "proActivePremissions": "[createArray(variables('RBACBuiltInRoles').contributor)]",
+        "copy": [
+            {
+                "name": "readersAuthorizations",
+                "count": "[if(parameters('readersEnabled'), length(variables('readersPremissions')), 0)]",
+                "input": [
+                    {
+                        "principalId": "[parameters('readerPrincipalID')]",
+                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
+                        "roleDefinitionId": "[variables('readersPremissions')[copyIndex()]]"
+                    }
+                ]
+            },
+            {
+                "name": "proActiveAuthorizations",
+                "count": "[if(parameters('proactiveEnabled'), length(variables('proActivePremissions')), 0)]",
+                "input": [
+                    {
+                        "principalId": "[parameters('proactivePrincipalID')]",
+                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
+                        "roleDefinitionId": "[variables('proActivePremissions')[copyIndex()]]"
+                    }
+                ]
+            }
+        ],
+        "lighthouseList": {
+            "registrationDefinitionName": "[parameters('managedByName')]",
+            "description": "[concat(parameters('managedByName'), ' FinOps Services')]",
+            "managedByTenantId": "[parameters('managedByTenantId')]",
+            "authorizations": "[union(variables('readersAuthorizations'), variables('proActiveAuthorizations'))]"
+        }
+    },
+    "resources": [],
+    "outputs": {
+        "lighthouseList": {
+            "type": "object",
+            "value": "[variables('lighthouseList')]"
+        }
+    }
+}

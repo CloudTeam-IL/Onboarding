@@ -11,12 +11,14 @@
         },
         "proactivePrincipalID": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
                 "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
         },
         "readersPrincipalID": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
                 "description": "CloudTeam.AI Readers Agent Principal ID"
             }
@@ -24,18 +26,18 @@
     },
     "variables": {
         "API": "2021-04-01",
+        "policyAPI": "2019-09-01",
+        "policyName": "CloudTeam.AI FinOps",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
             "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
-            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
-            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]"
         },
         "templatesNames": {
             "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
-            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
-            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]"
         }
     },
     "resources": [
@@ -80,25 +82,21 @@
                         "value": "[parameters('readersPrincipalID')]"
                     },
                     "billingExportRoleDef": {
-                        "value": "[reference(resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName).outputs.billingExportRBACDef.value)]"
+                        "value": "[reference(variables('templatesNames').initializeTemplateName, variables('API')).outputs.billingExportRBACDef.value]"
                     }
                 }
             }
         },
         {
-            "name": "[variables('templatesNames').finalizeTemplateName]",
+            "type": "Microsoft.Authorization/policyAssignments",
+            "name": "[variables('policyName')]",
+            "apiVersion": "[variables('policyAPI')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"
             ],
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "[variables('API')]",
             "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "contentVersion": "[variables('templatesProperties').contentVersion]",
-                    "uri": "[variables('templatesProperties').finalizeTemplateURI]"
-                },
-                "parameters": {}
+                "scope": "[managementGroup().id]",
+                "policyDefinitionId": "[reference(variables('templatesNames').onboardingTemplateName, variables('API')).outputs.policyDefID.value]"
             }
         }
     ],
