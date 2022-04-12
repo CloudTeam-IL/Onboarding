@@ -57,14 +57,10 @@
             "type": "string",
             "value": "[resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list').roleName))]"
         },
-        "roleDefName": {
-            "type": "string",
-            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list').roleName))).name]"
-        },
         "billingExportRoleDefID": {
             "type": "string",
             "condition": "[contains(parameters('list').roleName, 'Cost Management Export')]",
-            "value": "[reference(resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, 'Cost Management Export'))).id]"
+            "value": "[resourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, 'Cost Management Export'))]"
         }
     }
 }
