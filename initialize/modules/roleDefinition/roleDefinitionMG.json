@@ -53,10 +53,6 @@
         }
     ],
     "outputs": {
-        "roleDefResourceID": {
-            "type": "string",
-            "value": "[tenantResourceId('Microsoft.Authorization/roleDefinitions', guid(tenant().tenantId, parameters('list').roleName))]"
-        },
         "billingExportRoleDefID": {
             "type": "array",
             "copy": {
