@@ -188,7 +188,7 @@
     "outputs": {
         "policyDefID": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.Authorization/policyDefinitions', parameters('policyName'))).id]"
+            "value": "[tenantResourceId('Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
         }
     }
 }
