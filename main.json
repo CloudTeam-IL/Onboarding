@@ -95,14 +95,14 @@
                     "policyName": {
                         "value": "[variables('policyName')]"
                     },
-                    "billingExportRoleDef": {
-                        "value": "[reference(variables('templatesNames').initializeTemplateName, variables('API')).outputs.billingExportRBACDef.value]"
-                    },
                     "managedByTenantID": {
                         "value": "[variables('CloudTeamTenantID')]"
                     },
                     "location": {
                         "value": "[variables('location')]"
+                    },
+                    "billingExportRoleDefID": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName, variables('API')).outputs.billingExportRoleDefID.value]"
                     }
                 }
             }
