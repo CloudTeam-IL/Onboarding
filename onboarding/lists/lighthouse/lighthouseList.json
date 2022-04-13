@@ -50,24 +50,20 @@
             {
                 "name": "readersAuthorizations",
                 "count": "[if(not(empty(variables('readersPremissions'))), length(variables('readersPremissions')), 0)]",
-                "input": [
-                    {
-                        "principalId": "[parameters('readersPrincipalID')]",
-                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
-                        "roleDefinitionId": "[variables('readersPremissions')[copyIndex('readersAuthorizations')]]"
-                    }
-                ]
+                "input": {
+                    "principalId": "[parameters('readersPrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
+                    "roleDefinitionId": "[variables('readersPremissions')[copyIndex('readersAuthorizations')]]"
+                }
             },
             {
                 "name": "proActiveAuthorizations",
                 "count": "[if(not(empty(variables('proActivePremissions'))), length(variables('proActivePremissions')), 0)]",
-                "input": [
-                    {
-                        "principalId": "[parameters('proactivePrincipalID')]",
-                        "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
-                        "roleDefinitionId": "[variables('proActivePremissions')[copyIndex('proActiveAuthorizations')]]"
-                    }
-                ]
+                "input": {
+                    "principalId": "[parameters('proactivePrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
+                    "roleDefinitionId": "[variables('proActivePremissions')[copyIndex('proActiveAuthorizations')]]"
+                }
             }
         ],
         "lighthouseList": {
