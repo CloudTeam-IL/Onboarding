@@ -22,7 +22,7 @@
                 "description": "CloudTeam.AI Tenant ID"
             }
         },
-        "readerPrincipalID": {
+        "readersPrincipalID": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
@@ -49,11 +49,11 @@
         "copy": [
             {
                 "name": "readersAuthorizations",
-                "condition": "[not(empty(parameters('readerPrincipalID')))]",
+                "condition": "[not(empty(parameters('readersPrincipalID')))]",
                 "count": "[length(variables('readersPremissions'))]",
                 "input": [
                     {
-                        "principalId": "[parameters('readerPrincipalID')]",
+                        "principalId": "[parameters('readersPrincipalID')]",
                         "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
                         "roleDefinitionId": "[variables('readersPremissions')[copyIndex()]]"
                     }
