@@ -44,13 +44,12 @@
             "reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
             "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64"
         },
-        "readersPremissions": "[createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, parameters('billingExportRoleDefID'))]",
-        "proActivePremissions": "[createArray(variables('RBACBuiltInRoles').contributor)]",
+        "readersPremissions": "[if(not(empty(parameters('readersPrincipalID'))), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, parameters('billingExportRoleDefID')), json('null'))]",
+        "proActivePremissions": "[if(not(empty(parameters('proactivePrincipalID'))), createArray(variables('RBACBuiltInRoles').contributor), json('null'))]",
         "copy": [
             {
                 "name": "readersAuthorizations",
-                "condition": "[not(empty(parameters('readersPrincipalID')))]",
-                "count": "[length(variables('readersPremissions'))]",
+                "count": "[if(not(empty(variables('readersPremissions'))), length(variables('readersPremissions')), 0)]",
                 "input": [
                     {
                         "principalId": "[parameters('readersPrincipalID')]",
@@ -61,8 +60,7 @@
             },
             {
                 "name": "proActiveAuthorizations",
-                "condition": "[not(empty(parameters('proactivePrincipalID')))]",
-                "count": "[length(variables('proActivePremissions'))]",
+                "count": "[if(not(empty(variables('proActivePremissions'))), length(variables('proActivePremissions')), 0)]",
                 "input": [
                     {
                         "principalId": "[parameters('proactivePrincipalID')]",
