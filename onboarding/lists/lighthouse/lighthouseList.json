@@ -54,7 +54,7 @@
                     {
                         "principalId": "[parameters('readersPrincipalID')]",
                         "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
-                        "roleDefinitionId": "[copyIndex(variables('readersPremissions'))]"
+                        "roleDefinitionId": "[variables('readersPremissions')[copyIndex('readersAuthorizations')]]"
                     }
                 ]
             },
@@ -65,7 +65,7 @@
                     {
                         "principalId": "[parameters('proactivePrincipalID')]",
                         "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
-                        "roleDefinitionId": "[copyIndex(variables('proActivePremissions'))]"
+                        "roleDefinitionId": "[variables('proActivePremissions')[copyIndex('proActiveAuthorizations')]]"
                     }
                 ]
             }
