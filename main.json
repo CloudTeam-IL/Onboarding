@@ -118,8 +118,13 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"
             ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "properties": {
+                "enforcementMode": "Default",
                 "scope": "[variables('MGID')]",
+                "displayName": "[variables('policyName')]",
                 "policyDefinitionId": "[reference(variables('templatesNames').onboardingTemplateName, variables('API')).outputs.policyDefID.value]"
             }
         }
