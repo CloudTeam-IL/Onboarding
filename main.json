@@ -28,10 +28,12 @@
         "APIs": {
             "API": "2021-04-01",
             "policyAPI": "2019-09-01",
-            "remidiationAPI": "2021-10-01"
+            "remidiationAPI": "2021-10-01",
+            "roleAssignmentAPI": "2020-10-01-preview"
         },
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
+        "ownerRBAC": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
         "location": "[deployment().location]",
         "MGID": "[managementGroup().id]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
@@ -131,6 +133,19 @@
                 "scope": "[variables('MGID')]",
                 "displayName": "[variables('policyName')]",
                 "policyDefinitionId": "[reference(variables('templatesNames').onboardingTemplateName, variables('APIs').API).outputs.policyDefID.value]"
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "[variables('APIs').roleAssignmentAPI]",
+            "name": "policyVerifyPermissions",
+            "scope": "[variables('MGID')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/policyAssignments', variables('policyName'))]"
+            ],
+            "properties": {
+                "principalId": "[reference(resourceId('Microsoft.Authorization/policyAssignments', variables('policyName')), variables('APIs').API, 'full').identity.principalId]",
+                "roleDefinitionId": "[variables('ownerRBAC')]"
             }
         }
     ],
