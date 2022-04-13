@@ -15,6 +15,13 @@
             "metadata": {
                 "description": "Location"
             }
+        },
+        "MGID": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Management Group ID"
+            }
         }
     },
     "functions": [],
@@ -40,7 +47,11 @@
                     "uri": "[variables('templatesProperties').roleDefinitionListTemplateURI]",
                     "contentVersion": "[variables('templatesProperties').contentVersion]"
                 },
-                "parameters": {}
+                "parameters": {
+                    "MGID": {
+                        "value": "[parameters('MGID')]"
+                    }
+                }
             }
         },
         {

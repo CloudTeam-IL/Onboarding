@@ -30,6 +30,7 @@
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
         "location": "[deployment().location]",
+        "MGID": "[managementGroup().id]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
@@ -60,6 +61,9 @@
                     },
                     "location": {
                         "value": "[variables('location')]"
+                    },
+                    "MGID": {
+                        "value": "[variables('MGID')]"
                     }
                 }
             }
@@ -112,7 +116,7 @@
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"
             ],
             "properties": {
-                "scope": "[managementGroup().id]",
+                "scope": "[variables('MGID')]",
                 "policyDefinitionId": "[reference(variables('templatesNames').onboardingTemplateName, variables('API')).outputs.policyDefID.value]"
             }
         }
