@@ -30,6 +30,7 @@
         },
         "policyName": {
             "type": "string",
+            "defaultValue": "CloudTeam.AI FinOps",
             "metadata": {
                 "description": "description"
             }
@@ -68,7 +69,7 @@
     },
     "resources": [
         {
-            "name": "lighthouseList", // Add relevant parameters
+            "name": "lighthouseList",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
             "location": "[parameters('location')]",

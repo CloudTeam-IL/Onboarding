@@ -21,7 +21,7 @@
         },
         "MGID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "[managementGroup().id]",
             "metadata": {
                 "description": "Management Group ID"
             }
@@ -31,8 +31,7 @@
         "PolicyAPI": "2018-05-01",
         "rbacOwner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
         "policyProperties": {
-            "description": "[concat('Policy to enforce Lighthouse on subscriptions, delegating access to ', parameters('list').managedByName)]",
-            "displayName": "[concat('Onboard all subs to ', parameters('list').managedByName)]",
+            "description": "[concat('Policy to enforce Onboard subscriptions and delegating access automatically to ', parameters('list').managedByName)]",
             "mode": "All",
             "policyType": "Custom"
         }
@@ -44,8 +43,8 @@
             "location": "[parameters('location')]",
             "name": "[parameters('policyName')]",
             "properties": {
+                "displayName": "[parameters('policyName')]",
                 "description": "[variables('policyProperties').description]",
-                "displayName": "[variables('policyProperties').displayName]",
                 "mode": "[variables('policyProperties').mode]",
                 "policyType": "[variables('policyProperties').policyType]",
                 "parameters": {
