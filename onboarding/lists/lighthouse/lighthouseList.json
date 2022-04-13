@@ -71,10 +71,11 @@
             }
         ],
         "lighthouseList": {
+            "managedByName": "[parameters('managedByName')]",
             "registrationDefinitionName": "[parameters('managedByName')]",
             "description": "[concat(parameters('managedByName'), ' FinOps Services')]",
             "managedByTenantId": "[parameters('managedByTenantId')]",
-            "authorizations": "[createArray(union(variables('readersAuthorizations'), variables('proActiveAuthorizations')))]"
+            "authorizations": "[union(variables('readersAuthorizations'), variables('proActiveAuthorizations'))]"
         }
     },
     "resources": [],
