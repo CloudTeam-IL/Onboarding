@@ -64,6 +64,7 @@
             "name": "lighthouseList", // Add relevant parameters
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
@@ -90,6 +91,7 @@
             "name": "lighthouse",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', 'lighthouseList')]"
             ],
