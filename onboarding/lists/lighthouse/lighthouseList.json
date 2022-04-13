@@ -54,7 +54,7 @@
                     {
                         "principalId": "[parameters('readersPrincipalID')]",
                         "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
-                        "roleDefinitionId": "[variables('readersPremissions')[copyIndex()]]"
+                        "roleDefinitionId": "[copyIndex(variables('readersPremissions'))]"
                     }
                 ]
             },
@@ -65,7 +65,7 @@
                     {
                         "principalId": "[parameters('proactivePrincipalID')]",
                         "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
-                        "roleDefinitionId": "[variables('proActivePremissions')[copyIndex()]]"
+                        "roleDefinitionId": "[copyIndex(variables('proActivePremissions'))]"
                     }
                 ]
             }
@@ -74,7 +74,7 @@
             "registrationDefinitionName": "[parameters('managedByName')]",
             "description": "[concat(parameters('managedByName'), ' FinOps Services')]",
             "managedByTenantId": "[parameters('managedByTenantId')]",
-            "authorizations": "[union(variables('readersAuthorizations'), variables('proActiveAuthorizations'))]"
+            "authorizations": "[createArray(union(variables('readersAuthorizations'), variables('proActiveAuthorizations')))]"
         }
     },
     "resources": [],
