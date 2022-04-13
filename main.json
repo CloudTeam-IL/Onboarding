@@ -144,7 +144,7 @@
                 "[resourceId('Microsoft.Authorization/policyAssignments', variables('policyName'))]"
             ],
             "properties": {
-                "principalId": "[reference(resourceId('Microsoft.Authorization/policyAssignments', variables('policyName')), variables('APIs').API, 'full').identity.principalId]",
+                "principalId": "[reference(resourceId('Microsoft.Authorization/policyAssignments', variables('policyName')), variables('APIs').policyAPI, 'full').identity.principalId]",
                 "roleDefinitionId": "[variables('ownerRBAC')]"
             }
         }
