@@ -64,7 +64,7 @@
                         }
                     },
                     "managedByAuthorizations": {
-                        "type": "object",
+                        "type": "array",
                         "defaultValue": "[parameters('list').authorizations]",
                         "metadata": {
                             "description": "AuthZ"
@@ -127,7 +127,7 @@
                                             "value": "[[parameters('managedByDescription')]"
                                         },
                                         "managedByAuthorizations": {
-                                            "value": "[[createArray(parameters('managedByAuthorizations'))]"
+                                            "value": "[[parameters('managedByAuthorizations')]"
                                         }
                                     },
                                     "template": {
