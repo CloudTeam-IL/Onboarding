@@ -4,7 +4,7 @@
     "parameters": {
         "MGID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "[managementGroup().id]",
             "metadata": {
                 "description": "Management Group ID"
             }

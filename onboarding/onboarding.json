@@ -47,6 +47,13 @@
             "metadata": {
                 "description": "Location"
             }
+        },
+        "MGID": {
+            "type": "string",
+            "defaultValue": "[managementGroup().id]",
+            "metadata": {
+                "description": "Management Group ID"
+            }
         }
     },
     "variables": {
@@ -110,6 +117,9 @@
                     },
                     "location": {
                         "value": "[parameters('location')]"
+                    },
+                    "MGID": {
+                        "value": "[parameters('MGID')]"
                     }
                 }
             }

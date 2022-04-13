@@ -18,6 +18,13 @@
             "metadata": {
                 "description": "Location"
             }
+        },
+        "MGID": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Management Group ID"
+            }
         }
     },
     "variables": {
@@ -188,7 +195,7 @@
     "outputs": {
         "policyDefID": {
             "type": "string",
-            "value": "[tenantResourceId('Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
+            "value": "[extensionResourceId(parameters('MGID'), 'Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
         }
     }
 }

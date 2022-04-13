@@ -103,6 +103,9 @@
                     },
                     "billingExportRoleDefID": {
                         "value": "[reference(variables('templatesNames').initializeTemplateName, variables('API')).outputs.billingExportRoleDefID.value]"
+                    },
+                    "MGID": {
+                        "value": "[variables('MGID')]"
                     }
                 }
             }
