@@ -2,12 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "billingExportRoleDefID": {
-            "type": "string",
-            "metadata": {
-                "description": "Billing Export Custom Role ID"
-            }
-        },
+        // "billingExportRoleDefID": {
+        //     "type": "string",
+        //     "metadata": {
+        //         "description": "Billing Export Custom Role ID"
+        //     }
+        // },
         "managedByName": {
             "type": "string",
             "defaultValue": "CloudTeam.AI",
@@ -45,8 +45,8 @@
             "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
             "LHDelete": "91c1777a-f3dc-4fae-b103-61d183457e46"
         },
-        "billingExportRoleDef": "[last(split(parameters('billingExportRoleDefID'), '/'))]",
-        "readersPremissions": "[if(not(empty(parameters('readersPrincipalID'))), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('billingExportRoleDef'), variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        // "billingExportRoleDef": "[last(split(parameters('billingExportRoleDefID'), '/'))]",
+        "readersPremissions": "[if(not(empty(parameters('readersPrincipalID'))), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
         "proActivePremissions": "[if(not(empty(parameters('proactivePrincipalID'))), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
         "copy": [
             {

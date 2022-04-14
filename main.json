@@ -40,49 +40,46 @@
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
-            "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
-            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
-            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+            // "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
+            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]"
+            // "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
         },
         "templatesNames": {
-            "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
-            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
-            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+            // "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
+            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]"
+            // "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
         }
     },
     "resources": [
-        {
-            "type": "Microsoft.Resources/deployments",
-            "name": "[variables('templatesNames').initializeTemplateName]",
-            "location": "[variables('location')]",
-            "apiVersion": "[variables('APIs').API]",
-            "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "contentVersion": "[variables('templatesProperties').contentVersion]",
-                    "uri": "[variables('templatesProperties').initializeTemplateURI]"
-                },
-                "parameters": {
-                    "gitURI": {
-                        "value": "[concat(variables('gitURI'), 'initialize/')]"
-                    },
-                    "location": {
-                        "value": "[variables('location')]"
-                    },
-                    "MGID": {
-                        "value": "[variables('MGID')]"
-                    }
-                }
-            }
-        },
+        // {
+        //     "type": "Microsoft.Resources/deployments",
+        //     "name": "[variables('templatesNames').initializeTemplateName]",
+        //     "location": "[variables('location')]",
+        //     "apiVersion": "[variables('APIs').API]",
+        //     "properties": {
+        //         "mode": "[variables('templatesProperties').defaultMode]",
+        //         "templateLink": {
+        //             "contentVersion": "[variables('templatesProperties').contentVersion]",
+        //             "uri": "[variables('templatesProperties').initializeTemplateURI]"
+        //         },
+        //         "parameters": {
+        //             "gitURI": {
+        //                 "value": "[concat(variables('gitURI'), 'initialize/')]"
+        //             },
+        //             "location": {
+        //                 "value": "[variables('location')]"
+        //             },
+        //             "MGID": {
+        //                 "value": "[variables('MGID')]"
+        //             }
+        //         }
+        //     }
+        // },
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').onboardingTemplateName]",
             "apiVersion": "[variables('APIs').API]",
             "location": "[variables('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
-            ],
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
@@ -108,9 +105,9 @@
                     "location": {
                         "value": "[variables('location')]"
                     },
-                    "billingExportRoleDefID": {
-                        "value": "[reference(variables('templatesNames').initializeTemplateName, variables('APIs').API).outputs.billingExportRoleDefID.value]"
-                    },
+                    // "billingExportRoleDefID": {
+                    //     "value": "[reference(variables('templatesNames').initializeTemplateName, variables('APIs').API).outputs.billingExportRoleDefID.value]"
+                    // },
                     "MGID": {
                         "value": "[variables('MGID')]"
                     }
@@ -137,6 +134,7 @@
         },
         {
             "type": "Microsoft.Authorization/roleAssignments",
+            
             "apiVersion": "[variables('APIs').roleAssignmentAPI]",
             "name": "policyVerifyPermissions",
             "scope": "[variables('MGID')]",

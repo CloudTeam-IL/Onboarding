@@ -22,12 +22,12 @@
                 "description": "Official Git repo for CloudTeam.AI onboarding process (Onboarding Phase)."
             }
         },
-        "billingExportRoleDefID": {
-            "type": "string",
-            "metadata": {
-                "description": "Billing Export role definition ID"
-            }
-        },
+        // "billingExportRoleDefID": {
+        //     "type": "string",
+        //     "metadata": {
+        //         "description": "Billing Export role definition ID"
+        //     }
+        // },
         "policyName": {
             "type": "string",
             "defaultValue": "CloudTeam.AI FinOps",
@@ -80,9 +80,9 @@
                     "contentVersion": "[variables('templatesProperties').contentVersion]"
                 },
                 "parameters": {
-                    "billingExportRoleDefID": {
-                        "value": "[parameters('billingExportRoleDefID')]"
-                    },
+                    // "billingExportRoleDefID": {
+                    //     "value": "[parameters('billingExportRoleDefID')]"
+                    // },
                     "proactivePrincipalID": {
                         "value": "[parameters('proactivePrincipalID')]"
                     },
