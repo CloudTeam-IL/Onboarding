@@ -31,6 +31,7 @@
             "remidiationAPI": "2021-10-01",
             "roleAssignmentAPI": "2020-10-01-preview"
         },
+        "companyName": "CloudTeam",
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
         "ownerRBAC": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
@@ -136,7 +137,7 @@
             "type": "Microsoft.Authorization/roleAssignments",
             
             "apiVersion": "[variables('APIs').roleAssignmentAPI]",
-            "name": "policyVerifyPermissions",
+            "name": "[guid(variables('companyName'))]",
             "scope": "[variables('MGID')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Authorization/policyAssignments', variables('policyName'))]"
