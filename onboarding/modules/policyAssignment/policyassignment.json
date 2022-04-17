@@ -19,6 +19,10 @@
         },
         "policyDefinitionId": {
             "type": "string"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "defaultValue": "false"
         }
     },
     "variables": {
@@ -31,9 +35,7 @@
             "name": "[parameters('policyName')]",
             "location": "[parameters('location')]",
             "apiVersion": "[variables('policyAPI')]",
-            "identity": {
-                "type": "SystemAssigned"
-            },
+            "identity": "[if(parameters('MIEnabled'), json(concat('{\"type\": \"', 'SystemAssigned', '\"}')), json('null'))]",
             "properties": {
                 "enforcementMode": "[variables('enforcementMode')]",
                 "scope": "[parameters('scope')]",
@@ -46,6 +48,10 @@
         "principalId": {
             "type": "string",
             "value": "[reference(tenantResourceId('Microsoft.Authorization/policyAssignments', parameters('policyName')), variables('policyAPI'), 'full').identity.principalId]"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "value": "[parameters('MIEnabled')]"
         }
     }
 }

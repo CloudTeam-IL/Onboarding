@@ -33,7 +33,6 @@
         },
         "policyName": "CloudTeam.AI FinOps",
         "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
-        "ownerRBAC": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
         "location": "[deployment().location]",
         "MGID": "[managementGroup().id]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
@@ -112,37 +111,6 @@
                         "value": "[variables('MGID')]"
                     }
                 }
-            }
-        },
-        {
-            "type": "Microsoft.Authorization/policyAssignments",
-            "name": "[variables('policyName')]",
-            "location": "[variables('location')]",
-            "apiVersion": "[variables('APIs').policyAPI]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').onboardingTemplateName)]"
-            ],
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "properties": {
-                "enforcementMode": "Default",
-                "scope": "[variables('MGID')]",
-                "displayName": "[variables('policyName')]",
-                "policyDefinitionId": "[reference(variables('templatesNames').onboardingTemplateName, variables('APIs').API).outputs.policyDefID.value]"
-            }
-        },
-        {
-            "type": "Microsoft.Authorization/roleAssignments",
-            "apiVersion": "[variables('APIs').roleAssignmentAPI]",
-            "name": "['f']",
-            "scope": "[variables('MGID')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Authorization/policyAssignments', variables('policyName'))]"
-            ],
-            "properties": {
-                "principalId": "[reference(resourceId('Microsoft.Authorization/policyAssignments', variables('policyName')), variables('APIs').policyAPI, 'full').identity.principalId]",
-                "roleDefinitionId": "[variables('ownerRBAC')]"
             }
         }
     ],

@@ -64,7 +64,9 @@
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
             "lighthouseListTemplateURI": "[concat(variables('gitURI'), 'lists/lighthouse/lighthouseList.json')]",
-            "lighthouseTemplateURI": "[concat(variables('gitURI'), 'modules/lighthouse/lighthouse.json')]"
+            "lighthouseTemplateURI": "[concat(variables('gitURI'), 'modules/lighthouse/lighthouse.json')]",
+            "policyAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/policyAssignment/policyassignment.json')]",
+            "roleAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/roleAssignment/roleassignment.json')]"
         }
     },
     "resources": [
@@ -124,17 +126,71 @@
                     }
                 }
             }
-        }
-        // Create policyAssignments & roleAssignments block + dependsOn
-    ],
-    "outputs": {
-        "policyDefID": {
-            "type": "string",
-            "value": "[reference('lighthouse', variables('API')).outputs.policyDefID.value]"
         },
-        "principalId": {
-            "type": "string",
-            "value": "[reference('policyAssignment', variables('API')).outputs.principalId.value]"
+        {
+            "name": "policyAssignment",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'lighthouse')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').policyAssignmentTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "scope": {
+                        "value": "[parameters('MGID')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "policyName": {
+                        "value": "[parameters('policyName')]"
+                    },
+                    "policyDefinitionId": {
+                        "value": "[reference('lighthouse', variables('API')).outputs.policyDefID.value]"
+                    },
+                    "MIEnabled": {
+                        "value": "[reference('lighthouse', variables('API')).outputs.MIEnabled.value]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "roleAssignment",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "condition": "[reference(resourceId('Microsoft.Resources/deployments', 'policyAssignment')).outputs.MIEnabled.value]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'policyAssignment')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').roleAssignmentTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "scope": {
+                        "value": "[parameters('MGID')]"
+                    },
+                    "principalId": {
+                        "value": "[reference('policyAssignment', variables('API')).outputs.principalId.value]"
+                    },
+                    "roleDefinitionId": {
+                        "value": "[reference('lighthouse', variables('API')).outputs.roleDefID.value]"
+                    }
+                }
+            }
         }
-    }
+    ],
+    "outputs": {}
 }

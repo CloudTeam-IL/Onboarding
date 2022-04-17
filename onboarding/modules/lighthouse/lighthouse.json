@@ -25,11 +25,22 @@
             "metadata": {
                 "description": "Management Group ID"
             }
+        },
+        "effect": {
+            "type": "string",
+            "defaultValue": "deployIfNotExists",
+            "allowedValues": [
+                "deployIfNotExists",
+                "auditIfNotExists"
+            ],
+            "metadata": {
+                "description": "Audit Or Enforce mode"
+            }
         }
     },
     "variables": {
         "PolicyAPI": "2018-05-01",
-        "rbacOwner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+        "roleDefID": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635", // Owner
         "policyProperties": {
             "description": "[concat('Policy to enforce Onboard subscriptions and delegating access automatically to ', parameters('list').managedByName)]",
             "mode": "All",
@@ -104,7 +115,7 @@
                             "deploymentScope": "subscription",
                             "existenceScope": "subscription",
                             "roleDefinitionIds": [
-                                "[concat('/providers/Microsoft.Authorization/roleDefinitions/', variables('rbacOwner'))]"
+                                "[concat('/providers/Microsoft.Authorization/roleDefinitions/', variables('roleDefID'))]"
                             ],
                             "existenceCondition": {
                                 "allOf": [
@@ -195,6 +206,14 @@
         "policyDefID": {
             "type": "string",
             "value": "[extensionResourceId(parameters('MGID'), 'Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
+        },
+        "roleDefID": {
+            "type": "string",
+            "value": "[variables('roleDefID')]"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "value": "[equals(parameters('effect'), 'deployIfNotExists')]"
         }
     }
 }
