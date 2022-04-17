@@ -135,7 +135,7 @@
         {
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "[variables('APIs').roleAssignmentAPI]",
-            "name": "[guid(variables('ownerRBAC'), variables('MGID'), reference(resourceId('Microsoft.Authorization/policyAssignments', variables('policyName')), variables('APIs').policyAPI, 'full').identity.principalId)]",
+            "name": "['f']",
             "scope": "[variables('MGID')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Authorization/policyAssignments', variables('policyName'))]"

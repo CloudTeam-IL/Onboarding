@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "principalId": {
+            "type": "string",
+            "metadata": {
+                "description": "Principal ID"
+            }
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Location"
+            }
+        },
+        "scope": {
+            "type": "string"
+        },
+        "roleDefinitionId": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "roleAssignmentAPI": "2020-10-01-preview",
+        "roleAssignmentName": "[guid(parameters('scope'), deployment().name)]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "[variables('roleAssignmentAPI')]",
+            "name": "[variables('roleAssignmentName')]",
+            "location": "[parameters('location')]",
+            "scope": "[parameters('scope')]",
+            "properties": {
+                "principalId": "[parameters('principalId')]",
+                "roleDefinitionId": "[parameters('roleDefinitionId')]"
+            }
+        }
+    ],
+    "outputs": {}
+}

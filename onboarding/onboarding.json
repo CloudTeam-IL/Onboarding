@@ -125,11 +125,16 @@
                 }
             }
         }
+        // Create policyAssignments & roleAssignments block + dependsOn
     ],
     "outputs": {
         "policyDefID": {
             "type": "string",
             "value": "[reference('lighthouse', variables('API')).outputs.policyDefID.value]"
+        },
+        "principalId": {
+            "type": "string",
+            "value": "[reference('policyAssignment', variables('API')).outputs.principalId.value]"
         }
     }
 }
