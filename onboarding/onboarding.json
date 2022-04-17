@@ -165,7 +165,7 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
             "location": "[parameters('location')]",
-            "condition": "[reference('policyAssignment', variables('API')).outputs.MIEnabled.value]",
+            // "condition": "[reference('policyAssignment', variables('API')).outputs.MIEnabled.value]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', 'policyAssignment')]"
             ],
