@@ -51,9 +51,6 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "[variables('API')]",
             "location": "[parameters('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'policyDefinitionList')]"
-            ],
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {

@@ -9,8 +9,8 @@
     "functions": [],
     "variables": {
         "lightHouseAPI": "2019-06-01",
-        "managedByRegistrationName": "[guid(parameters('list')).managedByName]",
-        "managedByAssignmentName": "[guid(parameters('list')).managedByName]"
+        "managedByRegistrationName": "[guid(parameters('list').managedByName)]",
+        "managedByAssignmentName": "[guid(parameters('list').managedByName)]"
     },
     "resources": [
         {
