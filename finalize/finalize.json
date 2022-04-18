@@ -4,16 +4,16 @@
     "parameters": {
         "gitURI": {
             "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/policy/",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/finalize/",
             "metadata": {
-                "description": "Official Git repo for CloudTeam.AI onboarding process (Policy Phase)."
+                "description": "Official Git repo for CloudTeam.AI onboarding process (Finalize Phase)."
             }
         },
         "policyName": {
             "type": "string",
             "defaultValue": "CloudTeam.AI FinOps",
             "metadata": {
-                "description": "description"
+                "description": "Policy Name"
             }
         },
         "location": {

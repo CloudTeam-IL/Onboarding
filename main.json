@@ -49,12 +49,12 @@
             "defaultMode": "Incremental",
             "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
             "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
-            "policyTemplateURI": "[concat(variables('gitURI'), 'policy/policy.json')]"
+            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
         },
         "templatesNames": {
             "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
             "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
-            "policyTemplateName": "[first(split(last(split(variables('templatesProperties').policyTemplateURI, '/')), '.'))]"
+            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
         }
     },
     "resources": [
@@ -117,7 +117,7 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
-            "name": "[variables('templatesNames').policyTemplateName]",
+            "name": "[variables('templatesNames').finalizeTemplateName]",
             "apiVersion": "[variables('APIs').API]",
             "location": "[variables('location')]",
             "dependsOn": [
@@ -127,11 +127,11 @@
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
                     "contentVersion": "[variables('templatesProperties').contentVersion]",
-                    "uri": "[variables('templatesProperties').policyTemplateURI]"
+                    "uri": "[variables('templatesProperties').finalizeTemplateURI]"
                 },
                 "parameters": {
                     "gitURI": {
-                        "value": "[concat(variables('gitURI'), 'policy/')]"
+                        "value": "[concat(variables('gitURI'), 'finalize/')]"
                     },
                     "policyName": {
                         "value": "[variables('policyName')]"
