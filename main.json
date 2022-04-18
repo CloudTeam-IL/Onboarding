@@ -40,7 +40,7 @@
         },
         "managedByName": "CloudTeam.AI",
         "tenantId": "667d9faa-186f-4608-8a36-cf595f0350fb",
-        "policyName": "[concat(variables('managedByName'), 'FinOps')]",
+        "policyName": "[concat(variables('managedByName'), ' FinOps')]",
         "location": "[deployment().location]",
         "MGID": "[managementGroup().id]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
