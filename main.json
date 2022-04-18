@@ -11,7 +11,7 @@
         },
         "proactivePrincipalID": {
             "type": "string",
-            "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
+            // "defaultValue": "ef564843-294d-48c0-b957-9f93b46ce48a",
             "metadata": {
                 "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
