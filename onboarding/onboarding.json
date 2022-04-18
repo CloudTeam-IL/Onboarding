@@ -19,9 +19,9 @@
             "name": "[variables('managedByRegistrationName')]",
             "properties": {
                 "registrationDefinitionName": "[parameters('list').managedByName]",
-                "description": "[parameters('list').managedByDescription]",
                 "managedByTenantId": "[parameters('list').managedByTenantId]",
-                "authorizations": "[parameters('list').managedByAuthorizations]"
+                "description": "[parameters('list').description]",
+                "authorizations": "[parameters('list').authorizations]"
             }
         },
         {
