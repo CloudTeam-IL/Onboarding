@@ -47,7 +47,7 @@
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
-            "initializeTemplateURI": "[concat(variables('gitURI'), 'initalize/initalize.json')]",
+            "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
             "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
             "policyTemplateURI": "[concat(variables('gitURI'), 'policy/policy.json')]"
         },
