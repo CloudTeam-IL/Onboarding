@@ -90,7 +90,6 @@
             "name": "[variables('templatesNames').onboardingTemplateName]",
             "location": "[variables('location')]",
             "apiVersion": "[variables('APIs').API]",
-            "subscriptionId": "[parameters('subsList')[copyIndex()]]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
             ],
@@ -101,14 +100,19 @@
                     "uri": "[variables('templatesProperties').onboardingTemplateURI]"
                 },
                 "parameters": {
+                    "gitURI": {
+                        "value": "[concat(variables('gitURI'), 'onboarding/')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "subsList": {
+                        "value": "[parameters('subsList')]"
+                    },
                     "list": {
                         "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
                     }
                 }
-            },
-            "copy": {
-                "name": "onboardingLoop",
-                "count": "[length(parameters('subsList'))]"
             }
         },
         {

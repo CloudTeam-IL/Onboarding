@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "list": {
+            "type": "object"
+        }
+    },
+    "functions": [],
+    "variables": {
+        "lightHouseAPI": "2019-06-01",
+        "managedByRegistrationName": "[guid(parameters('list').managedByName)]",
+        "managedByAssignmentName": "[guid(parameters('list').managedByName)]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ManagedServices/registrationDefinitions",
+            "apiVersion": "[variables('lightHouseAPI')]",
+            "name": "[variables('managedByRegistrationName')]",
+            "properties": {
+                "registrationDefinitionName": "[parameters('list').managedByName]",
+                "managedByTenantId": "[parameters('list').managedByTenantId]",
+                "description": "[parameters('list').description]",
+                "authorizations": "[parameters('list').authorizations]"
+            }
+        },
+        {
+            "type": "Microsoft.ManagedServices/registrationAssignments",
+            "apiVersion": "[variables('lightHouseAPI')]",
+            "name": "[variables('managedByAssignmentName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedServices/registrationDefinitions/', variables('managedByRegistrationName'))]"
+            ],
+            "properties": {
+                "registrationDefinitionId": "[resourceId('Microsoft.ManagedServices/registrationDefinitions/',variables('managedByRegistrationName'))]"
+            }
+        }
+    ],
+    "outputs": {}
+}
