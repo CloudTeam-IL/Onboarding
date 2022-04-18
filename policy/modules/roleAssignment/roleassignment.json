@@ -19,6 +19,10 @@
         },
         "roleDefinitionId": {
             "type": "string"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "defaultValue": false
         }
     },
     "variables": {
@@ -30,6 +34,7 @@
             "type": "Microsoft.Authorization/roleAssignments",
             "apiVersion": "[variables('roleAssignmentAPI')]",
             "name": "[variables('roleAssignmentName')]",
+            "condition": "[parameters('MIEnabled')]",
             "location": "[parameters('location')]",
             "scope": "[parameters('scope')]",
             "properties": {

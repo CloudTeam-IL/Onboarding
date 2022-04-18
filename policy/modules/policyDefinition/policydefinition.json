@@ -203,10 +203,6 @@
         }
     ],
     "outputs": {
-        "policyDefID": {
-            "type": "string",
-            "value": "[extensionResourceId(parameters('MGID'), 'Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
-        },
         "roleDefID": {
             "type": "string",
             "value": "[variables('roleDefID')]"
@@ -214,6 +210,10 @@
         "MIEnabled": {
             "type": "bool",
             "value": "[equals(parameters('effect'), 'deployIfNotExists')]"
+        },
+        "policyDefID": {
+            "type": "string",
+            "value": "[extensionResourceId(parameters('MGID'), 'Microsoft.Authorization/policyDefinitions', parameters('policyName'))]"
         }
     }
 }

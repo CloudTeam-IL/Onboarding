@@ -2,84 +2,78 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "gitURI": {
+        "managedByName": {
             "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/initialize",
+            "defaultValue": "CloudTeam.AI",
             "metadata": {
-                "description": "Official Git repo for CloudTeam.AI onboarding process (Initialize Phase)."
+                "descriptions": "Company's name"
             }
         },
-        "location": {
+        "managedByTenantId": {
             "type": "string",
-            "defaultValue": "[deployment().location]",
+            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
             "metadata": {
-                "description": "Location"
+                "description": "CloudTeam.AI Tenant ID"
             }
         },
-        "MGID": {
+        "readersPrincipalID": {
             "type": "string",
-            "defaultValue": "[managementGroup().id]",
+            "defaultValue": "",
             "metadata": {
-                "description": "Management Group ID"
+                "description": "CloudTeam.AI Reader Agent Principal ID"
+            }
+        },
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
         }
     },
-    "functions": [],
     "variables": {
-        "API": "2021-04-01",
-        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
-        "templatesProperties": {
-            "contentVersion": "1.0.0.0",
-            "defaultMode": "Incremental",
-            "roleDefinitionListTemplateURI": "[concat(variables('gitURI'), 'lists/roleDefinition/roleDefinitionMGList.json')]",
-            "roleDefinitionTemplateURI": "[concat(variables('gitURI'), 'modules/roleDefinition/roleDefinitionMG.json')]"
+        "RBACBuiltInRoles": {
+            "owner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+            "contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+            "reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+            "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
+            "LHDelete": "91c1777a-f3dc-4fae-b103-61d183457e46"
+        },
+        "readersPremissions": "[if(not(empty(parameters('readersPrincipalID'))), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "proActivePremissions": "[if(not(empty(parameters('proactivePrincipalID'))), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "copy": [
+            {
+                "name": "readersAuthorizations",
+                "count": "[if(not(empty(variables('readersPremissions'))), length(variables('readersPremissions')), 0)]",
+                "input": {
+                    "principalId": "[parameters('readersPrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
+                    "roleDefinitionId": "[variables('readersPremissions')[copyIndex('readersAuthorizations')]]"
+                }
+            },
+            {
+                "name": "proActiveAuthorizations",
+                "count": "[if(not(empty(variables('proActivePremissions'))), length(variables('proActivePremissions')), 0)]",
+                "input": {
+                    "principalId": "[parameters('proactivePrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
+                    "roleDefinitionId": "[variables('proActivePremissions')[copyIndex('proActiveAuthorizations')]]"
+                }
+            }
+        ],
+        "lighthouseList": {
+            "managedByName": "[parameters('managedByName')]",
+            "registrationDefinitionName": "[parameters('managedByName')]",
+            "description": "[concat(parameters('managedByName'), ' FinOps Services')]",
+            "managedByTenantId": "[parameters('managedByTenantId')]",
+            "authorizations": "[union(variables('readersAuthorizations'), variables('proActiveAuthorizations'))]"
         }
     },
-    "resources": [
-        {
-            "name": "roleDefList",
-            "type": "Microsoft.Resources/deployments",
-            "location": "[parameters('location')]",
-            "apiVersion": "[variables('API')]",
-            "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').roleDefinitionListTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    "MGID": {
-                        "value": "[parameters('MGID')]"
-                    }
-                }
-            }
-        },
-        {
-            "name": "roleDefs",
-            "type": "Microsoft.Resources/deployments",
-            "location": "[parameters('location')]",
-            "apiVersion": "[variables('API')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'roleDefList')]"
-            ],
-            "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').roleDefinitionTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    "list": {
-                        "value": "[reference('roleDefList', variables('API')).outputs.roleDefList.value]"
-                    }
-                }
-            }
-        }
-    ],
+    "resources": [],
     "outputs": {
-        "billingExportRoleDefID": {
-            "type": "string",
-            "value": "[first(reference('roleDefs', variables('API')).outputs.billingExportRoleDefID.value)]"
+        "lighthouseList": {
+            "type": "object",
+            "value": "[variables('lighthouseList')]"
         }
     }
 }

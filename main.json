@@ -22,6 +22,13 @@
             "metadata": {
                 "description": "CloudTeam.AI Readers Agent Principal ID"
             }
+        },
+        "subsList": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "list of subs"
+            }
         }
     },
     "variables": {
@@ -31,54 +38,62 @@
             "remidiationAPI": "2021-10-01",
             "roleAssignmentAPI": "2020-10-01-preview"
         },
-        "policyName": "CloudTeam.AI FinOps",
-        "CloudTeamTenantID": "667d9faa-186f-4608-8a36-cf595f0350fb",
+        "managedByName": "CloudTeam.AI",
+        "tenantId": "667d9faa-186f-4608-8a36-cf595f0350fb",
+        "policyName": "[concat(variables('managedByName'), 'FinOps')]",
         "location": "[deployment().location]",
         "MGID": "[managementGroup().id]",
         "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
         "templatesProperties": {
             "contentVersion": "1.0.0.0",
             "defaultMode": "Incremental",
-            // "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
-            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]"
-            // "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+            "initializeTemplateURI": "[concat(variables('gitURI'), 'initalize/initalize.json')]",
+            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
+            "policyTemplateURI": "[concat(variables('gitURI'), 'policy/policy.json')]"
         },
         "templatesNames": {
-            // "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
-            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]"
-            // "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+            "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
+            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
+            "policyTemplateName": "[first(split(last(split(variables('templatesProperties').policyTemplateURI, '/')), '.'))]"
         }
     },
     "resources": [
-        // {
-        //     "type": "Microsoft.Resources/deployments",
-        //     "name": "[variables('templatesNames').initializeTemplateName]",
-        //     "location": "[variables('location')]",
-        //     "apiVersion": "[variables('APIs').API]",
-        //     "properties": {
-        //         "mode": "[variables('templatesProperties').defaultMode]",
-        //         "templateLink": {
-        //             "contentVersion": "[variables('templatesProperties').contentVersion]",
-        //             "uri": "[variables('templatesProperties').initializeTemplateURI]"
-        //         },
-        //         "parameters": {
-        //             "gitURI": {
-        //                 "value": "[concat(variables('gitURI'), 'initialize/')]"
-        //             },
-        //             "location": {
-        //                 "value": "[variables('location')]"
-        //             },
-        //             "MGID": {
-        //                 "value": "[variables('MGID')]"
-        //             }
-        //         }
-        //     }
-        // },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').initializeTemplateName]",
+            "location": "[variables('location')]",
+            "apiVersion": "[variables('APIs').API]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').initializeTemplateURI]"
+                },
+                "parameters": {
+                    "managedByName": {
+                        "value": "[variables('managedByName')]"
+                    },
+                    "managedByTenantId": {
+                        "value": "[variables('tenantId')]"
+                    },
+                    "readersPrincipalID": {
+                        "value": "[parameters('readersPrincipalID')]"
+                    },
+                    "proactivePrincipalID": {
+                        "value": "[parameters('proactivePrincipalID')]"
+                    }
+                }
+            }
+        },
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').onboardingTemplateName]",
-            "apiVersion": "[variables('APIs').API]",
             "location": "[variables('location')]",
+            "apiVersion": "[variables('APIs').API]",
+            "subscriptionId": "[parameters('subsList')[copyIndex()]]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
@@ -86,29 +101,45 @@
                     "uri": "[variables('templatesProperties').onboardingTemplateURI]"
                 },
                 "parameters": {
+                    "list": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
+                    }
+                }
+            },
+            "copy": {
+                "name": "onboardingLoop",
+                "count": "[length(parameters('subsList'))]"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').policyTemplateName]",
+            "apiVersion": "[variables('APIs').API]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').policyTemplateURI]"
+                },
+                "parameters": {
                     "gitURI": {
-                        "value": "[concat(variables('gitURI'), 'onboarding/')]"
-                    },
-                    "proactivePrincipalID": {
-                        "value": "[parameters('proactivePrincipalID')]"
-                    },
-                    "readersPrincipalID": {
-                        "value": "[parameters('readersPrincipalID')]"
+                        "value": "[concat(variables('gitURI'), 'policy/')]"
                     },
                     "policyName": {
                         "value": "[variables('policyName')]"
                     },
-                    "managedByTenantID": {
-                        "value": "[variables('CloudTeamTenantID')]"
-                    },
                     "location": {
                         "value": "[variables('location')]"
                     },
-                    // "billingExportRoleDefID": {
-                    //     "value": "[reference(variables('templatesNames').initializeTemplateName, variables('APIs').API).outputs.billingExportRoleDefID.value]"
-                    // },
                     "MGID": {
                         "value": "[variables('MGID')]"
+                    },
+                    "list": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
                     }
                 }
             }

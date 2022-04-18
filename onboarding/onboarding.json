@@ -1,194 +1,38 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "proactivePrincipalID": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "CloudTeam.AI Proactive Agent Principal ID"
-            }
-        },
-        "readersPrincipalID": {
-            "type": "string",
-            "metadata": {
-                "description": "CloudTeam.AI Readers Agent Principal ID"
-            }
-        },
-        "gitURI": {
-            "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/onboarding/",
-            "metadata": {
-                "description": "Official Git repo for CloudTeam.AI onboarding process (Onboarding Phase)."
-            }
-        },
-        // "billingExportRoleDefID": {
-        //     "type": "string",
-        //     "metadata": {
-        //         "description": "Billing Export role definition ID"
-        //     }
-        // },
-        "policyName": {
-            "type": "string",
-            "defaultValue": "CloudTeam.AI FinOps",
-            "metadata": {
-                "description": "description"
-            }
-        },
-        "managedByTenantId": {
-            "type": "string",
-            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
-            "metadata": {
-                "description": "CloudTeam.AI Tenant ID"
-            }
-        },
-        "location": {
-            "type": "string",
-            "defaultValue": "[deployment().location]",
-            "metadata": {
-                "description": "Location"
-            }
-        },
-        "MGID": {
-            "type": "string",
-            "defaultValue": "[managementGroup().id]",
-            "metadata": {
-                "description": "Management Group ID"
-            }
+        "list": {
+            "type": "array"
         }
     },
+    "functions": [],
     "variables": {
-        "API": "2021-04-01",
-        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
-        "templatesProperties": {
-            "contentVersion": "1.0.0.0",
-            "defaultMode": "Incremental",
-            "lighthouseListTemplateURI": "[concat(variables('gitURI'), 'lists/lighthouse/lighthouseList.json')]",
-            "lighthouseTemplateURI": "[concat(variables('gitURI'), 'modules/lighthouse/lighthouse.json')]",
-            "policyAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/policyAssignment/policyassignment.json')]",
-            "roleAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/roleAssignment/roleassignment.json')]"
-        }
+        "lightHouseAPI": "2019-06-01",
+        "managedByRegistrationName": "[guid(parameters('list')).managedByName]",
+        "managedByAssignmentName": "[guid(parameters('list')).managedByName]"
     },
     "resources": [
         {
-            "name": "lighthouseList",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "[variables('API')]",
-            "location": "[parameters('location')]",
+            "type": "Microsoft.ManagedServices/registrationDefinitions",
+            "apiVersion": "[variables('lightHouseAPI')]",
+            "name": "[variables('managedByRegistrationName')]",
             "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').lighthouseListTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    // "billingExportRoleDefID": {
-                    //     "value": "[parameters('billingExportRoleDefID')]"
-                    // },
-                    "proactivePrincipalID": {
-                        "value": "[parameters('proactivePrincipalID')]"
-                    },
-                    "readersPrincipalID": {
-                        "value": "[parameters('readersPrincipalID')]"
-                    },
-                    "managedByTenantId": {
-                        "value": "[parameters('managedByTenantId')]"
-                    }
-                }
+                "registrationDefinitionName": "[parameters('list').managedByName]",
+                "description": "[parameters('list').managedByDescription]",
+                "managedByTenantId": "[parameters('list').managedByTenantId]",
+                "authorizations": "[parameters('list').managedByAuthorizations]"
             }
         },
         {
-            "name": "lighthouse",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "[variables('API')]",
-            "location": "[parameters('location')]",
+            "type": "Microsoft.ManagedServices/registrationAssignments",
+            "apiVersion": "[variables('lightHouseAPI')]",
+            "name": "[variables('managedByAssignmentName')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'lighthouseList')]"
+                "[resourceId('Microsoft.ManagedServices/registrationDefinitions/', variables('managedByRegistrationName'))]"
             ],
             "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').lighthouseTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    "policyName": {
-                        "value": "[parameters('policyName')]"
-                    },
-                    "list": {
-                        "value": "[reference('lighthouseList', variables('API')).outputs.lighthouseList.value]"
-                    },
-                    "location": {
-                        "value": "[parameters('location')]"
-                    },
-                    "MGID": {
-                        "value": "[parameters('MGID')]"
-                    }
-                }
-            }
-        },
-        {
-            "name": "policyAssignment",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "[variables('API')]",
-            "location": "[parameters('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'lighthouse')]"
-            ],
-            "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').policyAssignmentTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    "scope": {
-                        "value": "[parameters('MGID')]"
-                    },
-                    "location": {
-                        "value": "[parameters('location')]"
-                    },
-                    "policyName": {
-                        "value": "[parameters('policyName')]"
-                    },
-                    "policyDefinitionId": {
-                        "value": "[reference('lighthouse', variables('API')).outputs.policyDefID.value]"
-                    },
-                    "MIEnabled": {
-                        "value": "[reference('lighthouse', variables('API')).outputs.MIEnabled.value]"
-                    }
-                }
-            }
-        },
-        {
-            "name": "roleAssignment",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "[variables('API')]",
-            "location": "[parameters('location')]",
-            // "condition": "[reference('policyAssignment', variables('API')).outputs.MIEnabled.value]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'policyAssignment')]"
-            ],
-            "properties": {
-                "mode": "[variables('templatesProperties').defaultMode]",
-                "templateLink": {
-                    "uri": "[variables('templatesProperties').roleAssignmentTemplateURI]",
-                    "contentVersion": "[variables('templatesProperties').contentVersion]"
-                },
-                "parameters": {
-                    "location": {
-                        "value": "[parameters('location')]"
-                    },
-                    "scope": {
-                        "value": "[parameters('MGID')]"
-                    },
-                    "principalId": {
-                        "value": "[reference('policyAssignment', variables('API')).outputs.principalId.value]"
-                    },
-                    "roleDefinitionId": {
-                        "value": "[reference('lighthouse', variables('API')).outputs.roleDefID.value]"
-                    }
-                }
+                "registrationDefinitionId": "[resourceId('Microsoft.ManagedServices/registrationDefinitions/',variables('managedByRegistrationName'))]"
             }
         }
     ],

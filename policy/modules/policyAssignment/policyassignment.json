@@ -22,7 +22,7 @@
         },
         "MIEnabled": {
             "type": "bool",
-            "defaultValue": "false"
+            "defaultValue": false
         }
     },
     "variables": {
