@@ -18,14 +18,14 @@
         },
         "readersPrincipalID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "Disabled",
             "metadata": {
                 "description": "CloudTeam.AI Reader Agent Principal ID"
             }
         },
         "proactivePrincipalID": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "Disabled",
             "metadata": {
                 "description": "CloudTeam.AI Proactive Agent Principal ID"
             }
@@ -39,12 +39,14 @@
             "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
             "LHDelete": "91c1777a-f3dc-4fae-b103-61d183457e46"
         },
-        "readersPremissions": "[if(not(empty(parameters('readersPrincipalID'))), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
-        "proActivePremissions": "[if(not(empty(parameters('proactivePrincipalID'))), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "readersCheck": "[not(equals(parameters('readersPrincipalID'), 'Disabled'))]",
+        "proActiveCheck": "[not(equals(parameters('proactivePrincipalID'), 'Disabled'))]",
+        "readersPremissions": "[if(variables('readersCheck'), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
         "copy": [
             {
                 "name": "readersAuthorizations",
-                "count": "[if(not(empty(variables('readersPremissions'))), length(variables('readersPremissions')), 0)]",
+                "count": "[if(variables('readersCheck'), length(variables('readersPremissions')), 0)]",
                 "input": {
                     "principalId": "[parameters('readersPrincipalID')]",
                     "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
@@ -53,7 +55,7 @@
             },
             {
                 "name": "proActiveAuthorizations",
-                "count": "[if(not(empty(variables('proActivePremissions'))), length(variables('proActivePremissions')), 0)]",
+                "count": "[if(variables('proActiveCheck'), length(variables('proActivePremissions')), 0)]",
                 "input": {
                     "principalId": "[parameters('proactivePrincipalID')]",
                     "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
