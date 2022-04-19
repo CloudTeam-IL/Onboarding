@@ -35,7 +35,6 @@
         "APIs": {
             "API": "2021-04-01",
             "policyAPI": "2019-09-01",
-            "remidiationAPI": "2021-10-01",
             "roleAssignmentAPI": "2020-10-01-preview"
         },
         "managedByName": "CloudTeam.AI",
