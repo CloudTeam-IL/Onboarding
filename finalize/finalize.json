@@ -4,7 +4,7 @@
     "parameters": {
         "gitURI": {
             "type": "string",
-            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/finalize/",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main/finalize/",
             "metadata": {
                 "description": "Official Git repo for CloudTeam.AI onboarding process (Finalize Phase)."
             }
