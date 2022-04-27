@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "policyName": {
+            "type": "string",
+            "metadata": {
+                "description": "Policy Name"
+            }
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Location"
+            }
+        },
+        "scope": {
+            "type": "string"
+        },
+        "policyDefinitionId": {
+            "type": "string"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "defaultValue": false
+        }
+    },
+    "variables": {
+        "policyAPI": "2019-09-01",
+        "enforcementMode": "Default"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/policyAssignments",
+            "name": "[parameters('policyName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "[variables('policyAPI')]",
+            "identity": "[if(parameters('MIEnabled'), json(concat('{\"type\": \"', 'SystemAssigned', '\"}')), json('null'))]",
+            "properties": {
+                "enforcementMode": "[variables('enforcementMode')]",
+                "scope": "[parameters('scope')]",
+                "displayName": "[parameters('policyName')]",
+                "policyDefinitionId": "[parameters('policyDefinitionId')]"
+            }
+        }
+    ],
+    "outputs": {
+        "principalId": {
+            "type": "string",
+            "value": "[reference(tenantResourceId('Microsoft.Authorization/policyAssignments', parameters('policyName')), variables('policyAPI'), 'full').identity.principalId]"
+        },
+        "MIEnabled": {
+            "type": "bool",
+            "value": "[parameters('MIEnabled')]"
+        }
+    }
+}

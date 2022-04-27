@@ -1,0 +1,65 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main/onboarding/",
+            "metadata": {
+                "description": "Official Git repo for CloudTeam.AI onboarding process (Onboarding Phase)."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
+        },
+        "subsList": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "list of subs"
+            }
+        },
+        "list": {
+            "type": "object"
+        }
+    },
+    "variables": {
+        "API": "2021-04-01",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "lighthouseTemplateURI": "[concat(variables('gitURI'), 'modules/lighthouse/lighthouse.json')]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[concat(parameters('subsList')[copyIndex()], '-onboarding')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "[variables('API')]",
+            "subscriptionId": "[parameters('subsList')[copyIndex()]]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').lighthouseTemplateURI]"
+                },
+                "parameters": {
+                    "list": {
+                        "value": "[parameters('list')]"
+                    }
+                }
+            },
+            "copy": {
+                "name": "onboardingLoop",
+                "count": "[length(parameters('subsList'))]"
+            }
+        }
+    ],
+    "outputs": {}
+}

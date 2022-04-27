@@ -1,0 +1,152 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main",
+            "metadata": {
+                "description": "Official Git repo for CloudTeam.AI onboarding process."
+            }
+        },
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "Disabled",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        },
+        "readersPrincipalID": {
+            "type": "string",
+            "defaultValue": "Disabled",
+            "metadata": {
+                "description": "CloudTeam.AI Readers Agent Principal ID"
+            }
+        },
+        "subsList": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "list of subs"
+            }
+        }
+    },
+    "variables": {
+        "APIs": {
+            "API": "2021-04-01",
+            "policyAPI": "2019-09-01",
+            "roleAssignmentAPI": "2020-10-01-preview"
+        },
+        "managedByName": "CloudTeam.AI",
+        "tenantId": "d4187394-68c7-4e1b-840d-3507a69b9230",
+        "policyName": "[concat(variables('managedByName'), ' FinOps')]",
+        "location": "[deployment().location]",
+        "MGID": "[managementGroup().id]",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
+            "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
+            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+        },
+        "templatesNames": {
+            "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
+            "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
+            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').initializeTemplateName]",
+            "location": "[variables('location')]",
+            "apiVersion": "[variables('APIs').API]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').initializeTemplateURI]"
+                },
+                "parameters": {
+                    "managedByName": {
+                        "value": "[variables('managedByName')]"
+                    },
+                    "managedByTenantId": {
+                        "value": "[variables('tenantId')]"
+                    },
+                    "readersPrincipalID": {
+                        "value": "[parameters('readersPrincipalID')]"
+                    },
+                    "proactivePrincipalID": {
+                        "value": "[parameters('proactivePrincipalID')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').onboardingTemplateName]",
+            "location": "[variables('location')]",
+            "apiVersion": "[variables('APIs').API]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').onboardingTemplateURI]"
+                },
+                "parameters": {
+                    "gitURI": {
+                        "value": "[concat(variables('gitURI'), 'onboarding/')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "subsList": {
+                        "value": "[parameters('subsList')]"
+                    },
+                    "list": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').finalizeTemplateName]",
+            "apiVersion": "[variables('APIs').API]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').finalizeTemplateURI]"
+                },
+                "parameters": {
+                    "gitURI": {
+                        "value": "[concat(variables('gitURI'), 'finalize/')]"
+                    },
+                    "policyName": {
+                        "value": "[variables('policyName')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "MGID": {
+                        "value": "[variables('MGID')]"
+                    },
+                    "list": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

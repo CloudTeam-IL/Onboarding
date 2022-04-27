@@ -1,0 +1,144 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "gitURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main/finalize/",
+            "metadata": {
+                "description": "Official Git repo for CloudTeam.AI onboarding process (Finalize Phase)."
+            }
+        },
+        "policyName": {
+            "type": "string",
+            "defaultValue": "CloudTeam.AI FinOps",
+            "metadata": {
+                "description": "Policy Name"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
+        },
+        "MGID": {
+            "type": "string",
+            "defaultValue": "[managementGroup().id]",
+            "metadata": {
+                "description": "Management Group ID"
+            }
+        },
+        "list": {
+            "type": "object"
+        }
+    },
+    "variables": {
+        "API": "2021-04-01",
+        "gitURI": "[if(endsWith(parameters('gitURI'), '/'), parameters('gitURI'), concat(parameters('gitURI'), '/'))]",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental",
+            "policyDefinitionTemplateURI": "[concat(variables('gitURI'), 'modules/policyDefinition/policydefinition.json')]",
+            "policyAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/policyAssignment/policyassignment.json')]",
+            "roleAssignmentTemplateURI": "[concat(variables('gitURI'), 'modules/roleAssignment/roleassignment.json')]"
+        }
+    },
+    "resources": [
+        {
+            "name": "policyDefinition",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').policyDefinitionTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "policyName": {
+                        "value": "[parameters('policyName')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "MGID": {
+                        "value": "[parameters('MGID')]"
+                    },
+                    "list": {
+                        "value": "[parameters('list')]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "policyAssignment",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'policyDefinition')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').policyAssignmentTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "scope": {
+                        "value": "[parameters('MGID')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "policyName": {
+                        "value": "[parameters('policyName')]"
+                    },
+                    "policyDefinitionId": {
+                        "value": "[reference('policyDefinition', variables('API')).outputs.policyDefID.value]"
+                    },
+                    "MIEnabled": {
+                        "value": "[reference('policyDefinition', variables('API')).outputs.MIEnabled.value]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "roleAssignment",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', 'policyAssignment')]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "uri": "[variables('templatesProperties').roleAssignmentTemplateURI]",
+                    "contentVersion": "[variables('templatesProperties').contentVersion]"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "scope": {
+                        "value": "[parameters('MGID')]"
+                    },
+                    "roleDefinitionId": {
+                        "value": "[reference('policyDefinition', variables('API')).outputs.roleDefID.value]"
+                    },
+                    "principalId": {
+                        "value": "[reference('policyAssignment', variables('API')).outputs.principalId.value]"
+                    },
+                    "MIEnabled": {
+                        "value": "[reference('policyAssignment', variables('API')).outputs.MIEnabled.value]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

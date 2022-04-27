@@ -1,0 +1,82 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "managedByName": {
+            "type": "string",
+            "defaultValue": "CloudTeam.AI",
+            "metadata": {
+                "descriptions": "Company's name"
+            }
+        },
+        "managedByTenantId": {
+            "type": "string",
+            "defaultValue": "d4187394-68c7-4e1b-840d-3507a69b9230",
+            "metadata": {
+                "description": "CloudTeam.AI Tenant ID"
+            }
+        },
+        "readersPrincipalID": {
+            "type": "string",
+            "defaultValue": "Disabled",
+            "metadata": {
+                "description": "CloudTeam.AI Reader Agent Principal ID"
+            }
+        },
+        "proactivePrincipalID": {
+            "type": "string",
+            "defaultValue": "Disabled",
+            "metadata": {
+                "description": "CloudTeam.AI Proactive Agent Principal ID"
+            }
+        }
+    },
+    "variables": {
+        "RBACBuiltInRoles": {
+            "owner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+            "contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+            "reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+            "costMgmtContributor": "434105ed-43f6-45c7-a02f-909b2ba83430",
+            "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
+            "LHDelete": "91c1777a-f3dc-4fae-b103-61d183457e46"
+        },
+        "readersCheck": "[not(equals(parameters('readersPrincipalID'), 'Disabled'))]",
+        "proActiveCheck": "[not(equals(parameters('proactivePrincipalID'), 'Disabled'))]",
+        "readersPremissions": "[if(variables('readersCheck'), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').costMgmtContributor ,variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "copy": [
+            {
+                "name": "readersAuthorizations",
+                "count": "[if(variables('readersCheck'), length(variables('readersPremissions')), 0)]",
+                "input": {
+                    "principalId": "[parameters('readersPrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Readers Agent')]",
+                    "roleDefinitionId": "[variables('readersPremissions')[copyIndex('readersAuthorizations')]]"
+                }
+            },
+            {
+                "name": "proActiveAuthorizations",
+                "count": "[if(variables('proActiveCheck'), length(variables('proActivePremissions')), 0)]",
+                "input": {
+                    "principalId": "[parameters('proactivePrincipalID')]",
+                    "principalIdDisplayName": "[concat(parameters('managedByName'),' Proactive Agent')]",
+                    "roleDefinitionId": "[variables('proActivePremissions')[copyIndex('proActiveAuthorizations')]]"
+                }
+            }
+        ],
+        "lighthouseList": {
+            "managedByName": "[parameters('managedByName')]",
+            "registrationDefinitionName": "[parameters('managedByName')]",
+            "description": "[concat(parameters('managedByName'), ' FinOps Services')]",
+            "managedByTenantId": "[parameters('managedByTenantId')]",
+            "authorizations": "[union(variables('readersAuthorizations'), variables('proActiveAuthorizations'))]"
+        }
+    },
+    "resources": [],
+    "outputs": {
+        "lighthouseList": {
+            "type": "object",
+            "value": "[variables('lighthouseList')]"
+        }
+    }
+}
