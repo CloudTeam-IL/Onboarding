@@ -38,7 +38,7 @@
             "roleAssignmentAPI": "2020-10-01-preview"
         },
         "managedByName": "CloudTeam.AI",
-        "tenantId": "667d9faa-186f-4608-8a36-cf595f0350fb",
+        "tenantId": "d4187394-68c7-4e1b-840d-3507a69b9230",
         "policyName": "[concat(variables('managedByName'), ' FinOps')]",
         "location": "[deployment().location]",
         "MGID": "[managementGroup().id]",

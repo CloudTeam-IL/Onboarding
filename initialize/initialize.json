@@ -11,7 +11,7 @@
         },
         "managedByTenantId": {
             "type": "string",
-            "defaultValue": "667d9faa-186f-4608-8a36-cf595f0350fb",
+            "defaultValue": "d4187394-68c7-4e1b-840d-3507a69b9230",
             "metadata": {
                 "description": "CloudTeam.AI Tenant ID"
             }
