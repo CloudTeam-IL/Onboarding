@@ -29,14 +29,17 @@
             "metadata": {
                 "description": "list of subs"
             }
+        },
+        "childs": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Child Management groups for lighthouse deployment."
+            }
         }
     },
     "variables": {
-        "APIs": {
-            "API": "2021-04-01",
-            "policyAPI": "2019-09-01",
-            "roleAssignmentAPI": "2020-10-01-preview"
-        },
+        "API": "2021-04-01",
         "managedByName": "CloudTeam.AI",
         "tenantId": "d4187394-68c7-4e1b-840d-3507a69b9230",
         "policyName": "[concat(variables('managedByName'), ' FinOps')]",
@@ -48,12 +51,14 @@
             "defaultMode": "Incremental",
             "initializeTemplateURI": "[concat(variables('gitURI'), 'initialize/initialize.json')]",
             "onboardingTemplateURI": "[concat(variables('gitURI'), 'onboarding/onboarding.json')]",
-            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]"
+            "finalizeTemplateURI": "[concat(variables('gitURI'), 'finalize/finalize.json')]",
+            "childsTemplateURI": "[concat(variables('gitURI'), 'childs/childs.json')]"
         },
         "templatesNames": {
             "initializeTemplateName": "[first(split(last(split(variables('templatesProperties').initializeTemplateURI, '/')), '.'))]",
             "onboardingTemplateName": "[first(split(last(split(variables('templatesProperties').onboardingTemplateURI, '/')), '.'))]",
-            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]"
+            "finalizeTemplateName": "[first(split(last(split(variables('templatesProperties').finalizeTemplateURI, '/')), '.'))]",
+            "childsTemplateName": "[first(split(last(split(variables('templatesProperties').childsTemplateURI, '/')), '.'))]"
         }
     },
     "resources": [
@@ -61,7 +66,7 @@
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').initializeTemplateName]",
             "location": "[variables('location')]",
-            "apiVersion": "[variables('APIs').API]",
+            "apiVersion": "[variables('API')]",
             "properties": {
                 "mode": "[variables('templatesProperties').defaultMode]",
                 "templateLink": {
@@ -86,9 +91,42 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
+            "name": "[variables('templatesNames').childsTemplateName]",
+            "location": "[variables('location')]",
+            "apiVersion": "[variables('API')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
+            ],
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[variables('templatesProperties').childsTemplateURI]"
+                },
+                "parameters": {
+                    "childs": {
+                        "value": "[parameters('childs')]"
+                    },
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "list": {
+                        "value": "[reference(variables('templatesNames').initializeTemplateName).outputs.lighthouseList.value]"
+                    },
+                    "onboardingTemplateURI": {
+                        "value": "[variables('templatesProperties').onboardingTemplateURI]"
+                    },
+                    "onboardingTemplateName": {
+                        "value": "[variables('templatesNames').onboardingTemplateName]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').onboardingTemplateName]",
             "location": "[variables('location')]",
-            "apiVersion": "[variables('APIs').API]",
+            "apiVersion": "[variables('API')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"
             ],
@@ -117,7 +155,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[variables('templatesNames').finalizeTemplateName]",
-            "apiVersion": "[variables('APIs').API]",
+            "apiVersion": "[variables('API')]",
             "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Resources/deployments', variables('templatesNames').initializeTemplateName)]"

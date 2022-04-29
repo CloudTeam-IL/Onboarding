@@ -1,0 +1,77 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/managementGroupDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[deployment().location]",
+            "metadata": {
+                "description": "Location"
+            }
+        },
+        "onboardingTemplateURI": {
+            "type": "string",
+            "defaultValue": "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main/onboarding/onboarding.json",
+            "metadata": {
+                "description": "Onboarding Template URI"
+            }
+        },
+        "onboardingTemplateName": {
+            "type": "string",
+            "defaultValue": "onboarding",
+            "metadata": {
+                "description": "Onboarding Template name"
+            }
+        },
+        "childs": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "list of subs"
+            }
+        },
+        "list": {
+            "type": "object"
+        }
+    },
+    "functions": [],
+    "variables": {
+        "API": "2021-04-01",
+        "templatesProperties": {
+            "contentVersion": "1.0.0.0",
+            "defaultMode": "Incremental"
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('onboardingTemplateName')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "[variables('API')]",
+            "location": "[parameters('location')]",
+            "scope": "[parameters('childs')[copyIndex()].id]",
+            "properties": {
+                "mode": "[variables('templatesProperties').defaultMode]",
+                "templateLink": {
+                    "contentVersion": "[variables('templatesProperties').contentVersion]",
+                    "uri": "[parameters('onboardingTemplateURI')]"
+                },
+                "parameters": {
+                    "subsList": {
+                        "value": "[parameters('childs')[copyIndex()].subsList]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "list": {
+                        "value": "[parameters('list')]"
+                    }
+                }
+            },
+            "copy": {
+                "name": "onboardingMGloop",
+                "count": "[length(parameters('childs'))]"
+            }
+        }
+    ],
+    "outputs": {}
+}
