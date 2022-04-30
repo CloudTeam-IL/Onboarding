@@ -10,35 +10,67 @@ param(
     $readersPrincipalId,
 
     [string]
-    [Parameter(Mandatory = $true)]
-    $proactivePrincipalId = ''
+    [Parameter()]
+    $proactivePrincipalId = 'Disabled'
 )
 #Requires -Modules Az, Microsoft.Graph
 
 ## Access Token
-function accessToken {
+function Get-AccessToken {
     param (
         [string]
-        [Parameter(Mandatory = $true)]
-        $ResourceTypeName
+        [Parameter()]
+        $ResourceTypeName = 'MSGraph'
     )
     $token = Get-AzAccessToken -ResourceTypeName $ResourceTypeName
     return $token
 }
-## Get User's object id - Input UserId - $ARM.Context.Account.Id
-function objectId {
+function Connect-AAD {
     param (
         [string]
         [Parameter(Mandatory = $true)]
-        $accessToken,
-
+        $AccessToken
+    )
+    $MSGraphConnection = Connect-MgGraph -AccessToken $AccessToken
+    return $MSGraphConnection
+}
+## Get User's object id - Input UserId - $ARM.Context.Account.Id
+function Get-ObjectId {
+    param (
         [string]
         [Parameter(Mandatory = $true)]
         $UserId
     )
-    Connect-MgGraph -AccessToken $accessToken | Out-Null
     $user = Get-MgUser -All | Where-Object { $_.DisplayName -eq $UserId -or $_.UserPrincipalName -like $UserId }
     return $user
+}
+function Get-UserPemissions {
+    param (
+        [string]
+        [Parameter(Mandatory = $true)]
+        $UserId
+    )
+    $response = $null
+    $uri = "https://graph.microsoft.com/beta/roleManagement/directory/transitiveRoleAssignments?`$count=true&`$filter=principalId eq '$UserId'"
+    $method = 'GET'
+    $headers = @{'ConsistencyLevel' = 'eventual' }
+    $response = (Invoke-MgGraphRequest -Uri $uri -Headers $headers -Method $method -Body $null).value
+    return $response
+}
+function checkRole {
+    param (
+        [Parameter()]
+        $roles,
+        [string]
+        [Parameter()]
+        $roleDefinitionId = '62e90394-69f5-4237-9190-012177145e10'
+    )
+    if (roleDefinitionId -in $roles.roleDefinitionId) {
+        return $true
+    }
+    else {
+        return $false
+    }
 }
 ## Elevate access
 function elevateAccess {
@@ -55,18 +87,43 @@ function roleAssignment {
         [Parameter(Mandatory = $true)]
         [string] $RoleDefinitionName,
         [Parameter(Mandatory = $true)]
-        [string] $SignInName,
+        [string] $ObjectId,
         [Parameter(Mandatory = $true)]
         [string] $Scope
     )
-    $role = New-AzRoleAssignment -SignInName $SignInName -RoleDefinitionName $RoleDefinitionName -Scope $Scope -WarningAction SilentlyContinue
+    $role = New-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -WarningAction SilentlyContinue
     return $role
+}
+function MGMenu {
+    param (
+        [Parameter()]
+        $MGs
+    )
+    Write-Host "Enter the option number for the management group onboarding:"
+    $switchBlock = ""
+    for ($i = 1; $i -le $MGs.length; $i++) {
+        $switchBlock += "`n`t$i) '$($MGs.DisplayName)'"
+    }
+    return $switchBlock
+}
+function Switch-MG {
+    param (
+        [Parameter()]
+        $Option
+    )
+    $switch = 'switch($Option){'
+    for ($i = 1; $i -le $MGs.length; $i++) {
+        $switch += "`n`t$i { '$($MGs.DisplayName)' }"
+    }
+    $switch += "`n}"
+    $MGOption = Invoke-Expression $switch
+    return $MGOption
 }
 function onboardingObjects {
     Param
     (
         [Parameter(Mandatory = $true)]
-        [string] $MGExpandedObject
+        $MGExpandedObject
     )
     $SubsOnboard = @()
     $MGsOnboard = @()
@@ -107,7 +164,7 @@ function onboardingObjects {
             }
         }
     }
-    return $MGsOnboard, $SubsOnboard
+    return $onboardObjects, $SubsOnboard
 }
 Write-Host "Connecting to the customer's tenant...`n"
 $ARMConnection = Connect-AzAccount -TenantId $tenantId -WarningAction SilentlyContinue
@@ -116,31 +173,21 @@ if ($ARMConnection) {
     Write-Host "`nListing Management Groups...`n"
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if ($MGs) {
-        Write-Host "Enter the option number for the management group onboarding:"
-        $switchBlock = ""
-        $switch = 'switch($option){'
-        for ($i = 1; $i -le $MGs.length; $i++) {
-            $switchBlock += "`n`t$i) '$($MGs.DisplayName)'"
-            $switch += "`n`t$i { '$($MGs.DisplayName)' }"
-        }
-        Write-Host "$switchBlock`n" -ForegroundColor Blue
-        $option = Read-Host Option
-        $switch += "`n}"
-        $MGOption = Invoke-Expression $switch
-        Write-Host "`n'$MGOption' Management Group selected.`n" -ForegroundColor Green
-        $MGObject = $MGs | Where-Object { $_.DisplayName -eq $MGOption }
+        $MGMenuOutput = MGMenu -MGs $MGs
+        Write-Host "$MGMenuOutput`n" -ForegroundColor Blue
+        $Option = Read-Host Option
+        $ChoosenMG = Switch-MG -Option $Option
+        Write-Host "`n'$ChoosenMG' Management Group selected.`n" -ForegroundColor Green
+        $MGObject = $MGs | Where-Object { $_.DisplayName -eq $ChoosenMG }
         $MGExpandedObject = Get-AzManagementGroup -GroupName $MGObject.Name -Expand -Recurse -WarningAction SilentlyContinue
         $onboardObjects, $SubsList = onboardingObjects -MGExpandedObject $MGExpandedObject
-        # for child MG, need to add bool parameter that will determine if the finalize phase needs to be deployed.
-        # It needs to deploy lighthouse resources only.
-        # for child MG foreach loop, it needs to create a new SubsOnboard var and iterate over it !
         $paramObject = @{
             'gitURI'               = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main"
             'proactivePrincipalID' = $proactivePrincipalId
             'readersPrincipalID'   = $readersPrincipalId
             'subsList'             = $SubsList
         }
-        if ($MGsOnboard.Length -gt 0) {
+        if ($onboardObjects.Length -gt 0) {
             $paramObject += @{'childMG' = $onboardObjects }
         }
         $parameters = @{
