@@ -43,7 +43,7 @@
         "readersCheck": "[not(equals(parameters('readersPrincipalID'), 'Disabled'))]",
         "proActiveCheck": "[not(equals(parameters('proactivePrincipalID'), 'Disabled'))]",
         "readersPremissions": "[if(variables('readersCheck'), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').costMgmtContributor ,variables('RBACBuiltInRoles').LHDelete), json('null'))]",
-        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').costMgmtContributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
         "copy": [
             {
                 "name": "readersAuthorizations",
