@@ -105,7 +105,7 @@
                 },
                 "parameters": {
                     "childs": {
-                        "value": "[parameters('childs')]"
+                        "value": "[parameters('childs').MGs]"
                     },
                     "location": {
                         "value": "[variables('location')]"

@@ -240,7 +240,7 @@ function onboardingObjects {
         $MGExpandedObject
     )
     $SubsOnboard = @()
-    $MGsOnboard = @()
+    [hashtable[]]$MGsOnboard = @()
     Write-Host "Detecting subscriptions...`n"
     foreach ($child in $MGExpandedObject.Children) {
         if ($child.Type -eq "/subscriptions") {
@@ -269,13 +269,13 @@ function onboardingObjects {
                             }
                             if ($grandchildSubs) {
                                 $grandChildName = $grandChild.DisplayName
-                                $MGsOnboard += [pscustomobject]@{id = $grandChildMGId ; subsList = @($grandchildSubs) }
+                                $MGsOnboard += @{id = $grandChildMGId ; subsList = @($grandchildSubs) }
                             }
                         } until ($grandChildMG.Children.Count -gt 0)
                     }
                 }
                 if ($childSubs) {
-                    $MGsOnboard += [pscustomobject]@{ id = $child.Id ; subsList = @($childSubs) }
+                    $MGsOnboard += @{ id = $child.Id ; subsList = @($childSubs) }
                 }
             }
         }
