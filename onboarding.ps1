@@ -34,7 +34,7 @@
 
 ######################################################################################################################
 
-#  Copyright 2022 CloudTeam & CloudHiro Inc. or its affiliates. All Rights Re`ed.                                 #
+#  Copyright 2022 CloudTeam & CloudHiro Inc. or its affiliates. All Rights Re`ed.                                    #
 
 #  You may not use this file except in compliance with the License.                                                  #
 
@@ -63,7 +63,7 @@ param(
     [Parameter()]
     $ProactivePrincipalId = 'Disabled'
 )
-#Requires -Modules Az, Microsoft.Graph
+#Requires -Modules Az
 
 ## Access Token
 function Get-AccessToken {
@@ -84,15 +84,15 @@ function Connect-AAD {
     $MSGraphConnection = Connect-MgGraph -AccessToken $AccessToken
     return $MSGraphConnection
 }
-## Get User's object id - Input UserId - $ARM.Context.Account.Id
+## Get User's object id
 function Get-ObjectId {
     param (
         [string]
         [Parameter(Mandatory = $true)]
         $UserId
     )
-    $user = Get-MgUser -All | Where-Object { $_.DisplayName -eq $UserId -or $_.UserPrincipalName -like $UserId }
-    return $user
+    $user = Get-MgUser -All | Where-Object { $_.UserPrincipalName -eq $UserId -or $_.Mail -eq $UserId }
+    return $user.Id
 }
 function Get-UserPemissions {
     param (
@@ -115,7 +115,7 @@ function checkRole {
         [Parameter()]
         $roleDefinitionId = '62e90394-69f5-4237-9190-012177145e10'
     )
-    if (roleDefinitionId -in $roles.roleDefinitionId) {
+    if ($roleDefinitionId -in $roles.roleDefinitionId) {
         return $true
     }
     else {
@@ -135,6 +135,10 @@ function elevateAccess {
 # $ARMConnection.Context.Account.Id => signinname
 # "/" => scope
 # "Owner" => roledefinitionname
+function Get-RoleAssignment {
+    $role = Get-AzRoleAssignment -WarningAction SilentlyContinue
+    return $role
+}
 function New-RoleAssignment {
     Param
     (
@@ -177,17 +181,23 @@ function TempRoot {
     if ($MGConnection) {
         $ObjectId = Get-ObjectId -UserId $UserId
         $UserPermissions = Get-UserPemissions -ObjectId $ObjectId
-        if ((checkRole -roles $UserPermissions -roleDefinitionId $GlobalAdministrator)) {
+        if (checkRole -roles $UserPermissions -roleDefinitionId $GlobalAdministrator) {
             Write-Host "'$($UserId)' has Global Administrator privileges." -ForegroundColor Green
             Write-Host "`nElevating root access..."
             $ea = elevateAccess -APIVersion "2016-07-01"
             if ($ea = 200) {
                 $Scope = "/"
-                Write-Host "`nRoot access has successfully elevated." -ForegroundColor
-                $rbacAssignment = New-RoleAssignment -RoleDefinitionName $RoleDefinitionName -ObjectId $ObjectId -Scope $Scope
-                Write-Host "`nAssigning '$($RoleDefinitionName)' permission for '$($UserId)' on '$($Scope)' scope..."
-                if ($rbacAssignment) {
-                    Write-Host "'$($RoleDefinitionName)' Permission were given temporary for '$($UserId)' on Root Management Group sucessfully." -ForegroundColor Green
+                Write-Host "`nRoot access has successfully elevated." -ForegroundColor Green
+                $chkRole = Get-RoleAssignment | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $Scope -and $_.RoleDefinitionName -eq $RoleDefinitionName) }
+                if (!$chkRole) {
+                    $rbacAssignment = New-RoleAssignment -RoleDefinitionName $RoleDefinitionName -ObjectId $ObjectId -Scope $Scope
+                    Write-Host "`nAssigning '$($RoleDefinitionName)' permission for '$($UserId)' on '$($Scope)' scope..."
+                    if ($rbacAssignment) {
+                        Write-Host "'$($RoleDefinitionName)' Permission were given temporary for '$($UserId)' on Root Management Group sucessfully." -ForegroundColor Green
+                    }
+                }
+                else {
+                    Write-Host "'$($UserId)' has already '$($RoleDefinitionName)' permission on '$($Scope)'."
                 }
             }
         }
@@ -202,9 +212,10 @@ function MGMenu {
         $MGs
     )
     Write-Host "Enter the option number for the management group onboarding:"
-    $switchBlock = ""
+    $switchBlock = @()
     for ($i = 1; $i -le $MGs.length; $i++) {
-        $switchBlock += "`n`t$i) '$($MGs.DisplayName)'"
+        $MG = $MGs[$i - 1]
+        $switchBlock += "`n`t$i) '$($MG.DisplayName)'"
     }
     return $switchBlock
 }
@@ -215,7 +226,8 @@ function Switch-MG {
     )
     $switch = 'switch($Option){'
     for ($i = 1; $i -le $MGs.length; $i++) {
-        $switch += "`n`t$i { '$($MGs.DisplayName)' }"
+        $MG = $MGs[$i - 1]
+        $switch += "`n`t$i { '$($MG.DisplayName)' }"
     }
     $switch += "`n}"
     $MGOption = Invoke-Expression $switch
@@ -234,14 +246,15 @@ function onboardingObjects {
         if ($child.Type -eq "/subscriptions") {
             $SubsOnboard += $child.Id.Split("/subscriptions/")[1]
         }
-        elseif ($child.Type -eq "/managementGroup") {
+        elseif ($child.Type -eq "/providers/Microsoft.Management/managementGroups") {
+            Write-Host "new"
             if ($child.Children.Count -gt 0) {
                 $childSubs = @()
                 foreach ($children in $child.Children) {
                     if ($children.Type -eq "/subscriptions") {
                         $childSubs += @($children.Id.Split("/subscriptions/")[1])
                     }
-                    elseif ($children.Type -eq "/managementGroup") {
+                    elseif ($children.Type -eq "/providers/Microsoft.Management/managementGroups") {
                         $grandChildMG = $children
                         do {
                             foreach ($grandChild in $grandChildMG.Children) {
@@ -250,23 +263,26 @@ function onboardingObjects {
                                 if ($grandChild.Type -eq "/subscriptions") {
                                     $grandchildSubs += @($grandChild.Id.Split("/subscriptions/")[1])
                                 }
-                                elseif ($grandChild.Children.Type -eq "/managementGroup") {
+                                elseif ($grandChild.Children.Type -eq "/providers/Microsoft.Management/managementGroups") {
                                     $grandChildMG = $grandChild
                                 }
                             }
                             if ($grandchildSubs) {
-                                $MGsOnboard += @{'id' = $grandChildMGId ; 'subsList' = $grandchildSubs }
+                                $grandChildName = $grandChild.DisplayName
+                                $MGsOnboard += [pscustomobject]@{'id' = $grandChildMGId ; 'subsList' = @($grandchildSubs) }
                             }
                         } until ($grandChildMG.Children.Count -gt 0)
                     }
                 }
                 if ($childSubs) {
-                    $MGsOnboard += @{'id' = $child.Id ; 'subsList' = $childSubs }
+                    $MGsOnboard = @(
+                        [pscustomobject]@{ 'id' = $children.Id ; 'subsList' = @($childSubs) }
+                    )
                 }
             }
         }
     }
-    return $onboardObjects, $SubsOnboard
+    return $MGsOnboard, $SubsOnboard
 }
 function Select-MG {
     param (
@@ -292,14 +308,17 @@ function Get-MGExpandedObject {
 }
 function GenerateARMTemplateParameters {
     param (
-        [Parameter()]
-        $ParamObject
+        [Parameter(Mandatory = $true)]
+        $ParamObject,
+        [Parameter(Mandatory = $true)]
+        [string] $ManagementGroupId
     )
     $parameters = @{
         'Name'                    = 'CloudTeamOnboarding'
         'Location'                = 'westeurope'
         'TemplateUri'             = "$($paramObject.gitURI)/main.json"
         'TemplateParameterObject' = $paramObject
+        'ManagementGroupId'       = $ManagementGroupId
     }
     return $parameters
 }
@@ -324,30 +343,49 @@ if ($ARMConnection) {
     Write-Host "`nListing Management Groups...`n"
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if (!$MGs) {
+        Write-Host "Cannot list management groups." -ForegroundColor Red
+        Write-Host "`nTriggering temporary root permissions..."
         TempRoot -UserId $ARMConnection.Context.Account.Id
+        $temproot = $true
     }
-    Write-Host "`nListing Management Groups...`n"
+    else {
+        $temproot = $false
+    }
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if ($MGs) {
         $ChoosenMG = Select-MG -MGs $MGs
         $MGExpandedObject = Get-MGExpandedObject -ManagementGroup $ChoosenMG
         $onboardObjects, $SubsList = onboardingObjects -MGExpandedObject $MGExpandedObject
-        $ParamObject = @{
-            'gitURI'               = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main"
-            'proactivePrincipalID' = $ProactivePrincipalId
-            'readersPrincipalID'   = $ReadersPrincipalId
-            'subsList'             = $SubsList
+        $parameters = @{
+            'Name'                    = 'CloudTeamOnboarding'
+            'Location'                = 'westeurope'
+            'TemplateUri'             = "$($paramObject.gitURI)/main.json"
+            'TemplateParameterObject' = $paramObject
+            'ManagementGroupId'       = $MGExpandedObject.Id
+            'gitURI'                  = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev"
+            'proactivePrincipalID'    = $ProactivePrincipalId
+            'readersPrincipalID'      = $ReadersPrincipalId
+            'subsList'                = $SubsList
         }
         if ($onboardObjects.Length -gt 0) {
-            $ParamObject += @{'childMG' = $onboardObjects }
+            $parameters += @{'childs' = $onboardObjects }
         }
-        $parameters = GenerateARMTemplateParameters -paramObject $paramObject
-        $ARMDeployment = New-AzManagementGroupDeployment $parameters
-        if ($ARMDeployment -and $ARMDeployment.ProvisioningState -eq "Succeeded") {
-            Write-Host "'$($ARMConnection.Context.Account.Id)',Thank you for joining CloudTeam.AI FinOps Services." -ForegroundColor Green
+        $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
+        $token = Get-AccessToken -ResourceTypeName 'MSGraph'
+        $MGConnection = Connect-AAD -AccessToken $token.Token
+        if ($MGConnection) {
+            $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
         }
-        else {
-            Write-Error "Onboarding failed."
+        try {
+            $ARMDeployment = New-AzManagementGroupDeployment @parameters -Verbose
+        }
+        catch {
+            Write-Error $Error[0]
+        }
+        finally {
+            if ($temproot) {
+                Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
+            }
         }
     }
     else {
