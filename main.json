@@ -31,8 +31,8 @@
             }
         },
         "childs": {
-            "type": "array",
-            "defaultValue": [],
+            "type": "object",
+            "defaultValue": {},
             "metadata": {
                 "description": "Child Management groups for lighthouse deployment."
             }

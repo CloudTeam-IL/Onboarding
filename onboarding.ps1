@@ -269,15 +269,13 @@ function onboardingObjects {
                             }
                             if ($grandchildSubs) {
                                 $grandChildName = $grandChild.DisplayName
-                                $MGsOnboard += [pscustomobject]@{'id' = $grandChildMGId ; 'subsList' = @($grandchildSubs) }
+                                $MGsOnboard += [pscustomobject]@{id = $grandChildMGId ; subsList = @($grandchildSubs) }
                             }
                         } until ($grandChildMG.Children.Count -gt 0)
                     }
                 }
                 if ($childSubs) {
-                    $MGsOnboard = @(
-                        [pscustomobject]@{ 'id' = $children.Id ; 'subsList' = @($childSubs) }
-                    )
+                    $MGsOnboard += [pscustomobject]@{ id = $child.Id ; subsList = @($childSubs) }
                 }
             }
         }
@@ -357,19 +355,20 @@ if ($ARMConnection) {
         $MGExpandedObject = Get-MGExpandedObject -ManagementGroup $ChoosenMG
         $onboardObjects, $SubsList = onboardingObjects -MGExpandedObject $MGExpandedObject
         $parameters = @{
-            'Name'                    = 'CloudTeamOnboarding'
-            'Location'                = 'westeurope'
-            'TemplateUri'             = "$($paramObject.gitURI)/main.json"
-            'TemplateParameterObject' = $paramObject
-            'ManagementGroupId'       = $MGExpandedObject.Id
-            'gitURI'                  = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev"
-            'proactivePrincipalID'    = $ProactivePrincipalId
-            'readersPrincipalID'      = $ReadersPrincipalId
-            'subsList'                = $SubsList
+            'Name'                 = 'CloudTeamOnboarding'
+            'Location'             = 'westeurope'
+            'ManagementGroupId'    = $MGExpandedObject.Id
+            'gitURI'               = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev"
+            'TemplateUri'          = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/main.json"
+            'proactivePrincipalID' = $ProactivePrincipalId
+            'readersPrincipalID'   = $ReadersPrincipalId
+            'subsList'             = $SubsList
         }
         if ($onboardObjects.Length -gt 0) {
-            $parameters += @{'childs' = $onboardObjects }
+            $parameters = $parameters + @{'childs' = $onboardObjects }
+            Write-Host "pass"
         }
+        $parameters
         $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
         $token = Get-AccessToken -ResourceTypeName 'MSGraph'
         $MGConnection = Connect-AAD -AccessToken $token.Token
@@ -377,7 +376,7 @@ if ($ARMConnection) {
             $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
         }
         try {
-            $ARMDeployment = New-AzManagementGroupDeployment @parameters -Verbose
+            $ARMDeployment = New-AzManagementGroupDeployment @parameters -Verbose -debug
         }
         catch {
             Write-Error $Error[0]
