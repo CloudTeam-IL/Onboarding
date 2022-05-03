@@ -364,7 +364,7 @@ if ($ARMConnection) {
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if (!$MGs) {
         Write-Host "Cannot list management groups." -ForegroundColor Red
-        Write-Host "`nTriggering temporary root permissions..."
+        Write-Host "`nElevating temporary root permissions..."
         TempRoot -UserId $ARMConnection.Context.Account.Id
         $temproot = $true
     }
@@ -400,7 +400,10 @@ if ($ARMConnection) {
         }
         finally {
             if ($ARMDeployment) {
-                Write-Host "`Onboarding successfully completed." -ForegroundColor Green
+                Write-Host @"
+Onboarding successfully completed.
+Thank you '$($ARMConnection.Context.Account.Id)', and let's cut off the costs !
+"@ -ForegroundColor Green
             }
             if ($temproot) {
                 $token = Get-AccessToken -ResourceTypeName 'MSGraph'
