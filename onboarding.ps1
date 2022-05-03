@@ -61,7 +61,11 @@ param(
 
     [string]
     [Parameter(Mandatory = $true)]
-    $ProactivePrincipalId = 'Disabled'
+    $ProactivePrincipalId = 'Disabled',
+
+    [string]
+    [Parameter()]
+    $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev'
 )
 #Requires -Modules Az
 
@@ -367,8 +371,8 @@ if ($ARMConnection) {
         $parameters = @{
             'Name'                 = 'CloudTeamOnboarding'
             'Location'             = 'westeurope'
-            'gitURI'               = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev"
-            'TemplateUri'          = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/main.json"
+            'TemplateUri'          = "$($gitURI)/main.json"
+            'gitURI'               = $gitURI
             'ManagementGroupId'    = $MGExpandedObject.Name
             'proactivePrincipalID' = $ProactivePrincipalId
             'readersPrincipalID'   = $ReadersPrincipalId
@@ -393,6 +397,9 @@ if ($ARMConnection) {
             Write-Error $Error[0]
         }
         finally {
+            if ($ARMDeployment) {
+                Write-Host "Deployment successfully completed." -ForegroundColor Green
+            }
             if ($temproot) {
                 Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
             }
