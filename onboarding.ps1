@@ -7,6 +7,7 @@
   - User that has an Owner permission to the desired management group to be onboarded.
   OR
   - User that is a Global Administrator on the tenant.
+  ********************************************************************************************
   The onboarding.ps1 script logs in to a customer's tenant and do the following:
   - Lists all management groups in which the logged in user has permissions to.
   - Then, the customer should choose the desired management group in which CloudTeam will have access to it's subscriptions.
@@ -23,6 +24,9 @@
 
   .PARAMETER ProactivePrincipalId
   Proactive Group of users from CloudTeam.AI Experts.
+
+  .PARAMETER gitURI
+  Git URI for all ARM templates. Don't change the default value !
 
   .EXAMPLE
   PS> ./Onboarding.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -ReadersPrincipalId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -ProactivePrincipalId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -257,7 +261,6 @@ function onboardingObjects {
             $SubsOnboard += $child.Id.Split("/subscriptions/")[1]
         }
         elseif ($child.Type -eq "/providers/Microsoft.Management/managementGroups") {
-            Write-Host "new"
             if ($child.Children.Count -gt 0) {
                 $childSubs = @()
                 foreach ($children in $child.Children) {
@@ -349,7 +352,12 @@ function Cleanup {
     Disconnect-AzAccount | Out-Null
 }
 Write-Host "Connecting to the customer's tenant...`n"
-$ARMConnection = Connect-AzAccount -TenantId $TenantId -WarningAction SilentlyContinue
+try {
+    $ARMConnection = Connect-AzAccount -TenantId $TenantId -WarningAction SilentlyContinue
+}
+catch {
+    Write-Error $Error[0]
+}
 if ($ARMConnection) {
     Write-Host "Connected to '$($ARMConnection.Context.Tenant.Id)' Tenant." -ForegroundColor green
     Write-Host "`nListing Management Groups...`n"
@@ -372,6 +380,7 @@ if ($ARMConnection) {
             'Name'                 = 'CloudTeamOnboarding'
             'Location'             = 'westeurope'
             'TemplateUri'          = "$($gitURI)/main.json"
+            'Verbose'              = $true
             'gitURI'               = $gitURI
             'ManagementGroupId'    = $MGExpandedObject.Name
             'proactivePrincipalID' = $ProactivePrincipalId
@@ -382,15 +391,8 @@ if ($ARMConnection) {
             $object = @{ 'MGs' = $onboardObjects }
             $parameters = $parameters + @{'childs' = $object }
         }
-        $parameters
-        $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
-        $token = Get-AccessToken -ResourceTypeName 'MSGraph'
-        $MGConnection = Connect-AAD -AccessToken $token.Token
-        if ($MGConnection) {
-            $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
-        }
         try {
-            Write-Host "Starting onboarding deployment..."
+            Write-Host "Starting onboarding deployment...`n"
             $ARMDeployment = New-AzManagementGroupDeployment @parameters
         }
         catch {
@@ -398,10 +400,15 @@ if ($ARMConnection) {
         }
         finally {
             if ($ARMDeployment) {
-                Write-Host "Deployment successfully completed." -ForegroundColor Green
+                Write-Host "`Onboarding successfully completed." -ForegroundColor Green
             }
             if ($temproot) {
-                Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
+                $token = Get-AccessToken -ResourceTypeName 'MSGraph'
+                $MGConnection = Connect-AAD -AccessToken $token.Token
+                if ($MGConnection) {
+                    $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
+                    Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
+                }
             }
         }
     }
