@@ -60,7 +60,7 @@ param(
     $ReadersPrincipalId,
 
     [string]
-    [Parameter()]
+    [Parameter(Mandatory = $true)]
     $ProactivePrincipalId = 'Disabled'
 )
 #Requires -Modules Az
@@ -357,16 +357,16 @@ if ($ARMConnection) {
         $parameters = @{
             'Name'                 = 'CloudTeamOnboarding'
             'Location'             = 'westeurope'
-            'ManagementGroupId'    = $MGExpandedObject.Id
             'gitURI'               = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev"
             'TemplateUri'          = "https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev/main.json"
+            'ManagementGroupId'    = $MGExpandedObject.Name
             'proactivePrincipalID' = $ProactivePrincipalId
             'readersPrincipalID'   = $ReadersPrincipalId
             'subsList'             = $SubsList
         }
         if ($onboardObjects.Length -gt 0) {
-            $parameters = $parameters + @{'childs' = $onboardObjects }
-            Write-Host "pass"
+            $object = @{ 'MGs' = $onboardObjects }
+            $parameters = $parameters + @{'childs' = $object }
         }
         $parameters
         $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
@@ -376,7 +376,8 @@ if ($ARMConnection) {
             $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
         }
         try {
-            $ARMDeployment = New-AzManagementGroupDeployment @parameters -Verbose -debug
+            Write-Host "Starting onboarding deployment..."
+            $ARMDeployment = New-AzManagementGroupDeployment @parameters
         }
         catch {
             Write-Error $Error[0]
