@@ -75,6 +75,7 @@ function Get-AccessToken {
     $token = Get-AzAccessToken -ResourceTypeName $ResourceTypeName
     return $token
 }
+## Connect Microsoft Graph API
 function Connect-AAD {
     param (
         [string]
@@ -84,7 +85,7 @@ function Connect-AAD {
     $MSGraphConnection = Connect-MgGraph -AccessToken $AccessToken
     return $MSGraphConnection
 }
-## Get User's object id
+## Get the security principal's object id
 function Get-ObjectId {
     param (
         [string]
@@ -94,6 +95,7 @@ function Get-ObjectId {
     $user = Get-MgUser -All | Where-Object { $_.UserPrincipalName -eq $UserId -or $_.Mail -eq $UserId }
     return $user.Id
 }
+## List Security principal's permissions
 function Get-UserPemissions {
     param (
         [string]
@@ -107,6 +109,7 @@ function Get-UserPemissions {
     $response = (Invoke-MgGraphRequest -Uri $uri -Headers $headers -Method $method -Body $null).value
     return $response
 }
+## Check if a security principal has specific role.
 function checkRole {
     param (
         [Parameter()]
@@ -122,7 +125,7 @@ function checkRole {
         return $false
     }
 }
-## Elevate access
+## Elevate access for root access
 function elevateAccess {
     [string]
     [Parameter()]
@@ -131,14 +134,12 @@ function elevateAccess {
     $req = Invoke-AzRestMethod -Path "/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01" -Method POST
     return $req.StatusCode
 }
-## RBAC - Owner -> MG
-# $ARMConnection.Context.Account.Id => signinname
-# "/" => scope
-# "Owner" => roledefinitionname
+## Get Role assignments
 function Get-RoleAssignment {
     $role = Get-AzRoleAssignment -WarningAction SilentlyContinue
     return $role
 }
+## Create a role assignment
 function New-RoleAssignment {
     Param
     (
@@ -152,6 +153,7 @@ function New-RoleAssignment {
     $role = New-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -WarningAction SilentlyContinue
     return $role
 }
+## Remove a role assignment
 function Remove-RoleAssignment {
     param (
         [Parameter(Mandatory = $true)]
@@ -164,6 +166,7 @@ function Remove-RoleAssignment {
     $role = Remove-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $RoleDefinitionName -Scope $Scope -WarningAction SilentlyContinue
     return $role
 }
+## Delegates root access to the specified security principal
 function TempRoot {
     param (
         [Parameter()]
@@ -206,6 +209,7 @@ function TempRoot {
         }
     }
 }
+## Returns Management groups list.
 function MGMenu {
     param (
         [Parameter()]
@@ -219,6 +223,7 @@ function MGMenu {
     }
     return $switchBlock
 }
+## Switch (Select) the desired management group to be onboarded.
 function Switch-MG {
     param (
         [Parameter()]
@@ -233,6 +238,7 @@ function Switch-MG {
     $MGOption = Invoke-Expression $switch
     return $MGOption
 }
+## Discovering the objects to be onboarded.
 function onboardingObjects {
     Param
     (
@@ -282,6 +288,7 @@ function onboardingObjects {
     }
     return $MGsOnboard, $SubsOnboard
 }
+## Expected User's input for a management group to be onboarded.
 function Select-MG {
     param (
         [Parameter()]
@@ -294,6 +301,7 @@ function Select-MG {
     Write-Host "`n'$ChoosenMG' Management Group selected.`n" -ForegroundColor Green
     return $ChoosenMG
 }
+## Get the selected management group with more descriptive information.
 function Get-MGExpandedObject {
     param (
         [string]
@@ -304,6 +312,7 @@ function Get-MGExpandedObject {
     $MGExpandedObject = Get-AzManagementGroup -GroupName $MGObject.Name -Expand -Recurse -WarningAction SilentlyContinue
     return $MGExpandedObject
 }
+## Generate ARM Template parameters object
 function GenerateARMTemplateParameters {
     param (
         [Parameter(Mandatory = $true)]
@@ -320,6 +329,7 @@ function GenerateARMTemplateParameters {
     }
     return $parameters
 }
+## Cleanup function which remove any temporary configurations/permissions that were given in this process.
 function Cleanup {
     param (
         [Parameter(Mandatory = $true)]
