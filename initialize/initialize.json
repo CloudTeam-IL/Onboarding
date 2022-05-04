@@ -36,6 +36,7 @@
             "owner": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
             "contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c",
             "reader": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+            "reservationsOwner": "f7b75c60-3036-4b75-91c3-6b41c27c1689",
             "costMgmtContributor": "434105ed-43f6-45c7-a02f-909b2ba83430",
             "billingReader": "fa23ad8b-c56e-40d8-ac0c-ce449e1d2c64",
             "LHDelete": "91c1777a-f3dc-4fae-b103-61d183457e46"
@@ -43,7 +44,7 @@
         "readersCheck": "[not(equals(parameters('readersPrincipalID'), 'Disabled'))]",
         "proActiveCheck": "[not(equals(parameters('proactivePrincipalID'), 'Disabled'))]",
         "readersPremissions": "[if(variables('readersCheck'), createArray(variables('RBACBuiltInRoles').reader, variables('RBACBuiltInRoles').billingReader, variables('RBACBuiltInRoles').costMgmtContributor ,variables('RBACBuiltInRoles').LHDelete), json('null'))]",
-        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').costMgmtContributor, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
+        "proActivePremissions": "[if(variables('proActiveCheck'), createArray(variables('RBACBuiltInRoles').contributor, variables('RBACBuiltInRoles').costMgmtContributor, variables('RBACBuiltInRoles').reservationsOwner, variables('RBACBuiltInRoles').LHDelete), json('null'))]",
         "copy": [
             {
                 "name": "readersAuthorizations",
