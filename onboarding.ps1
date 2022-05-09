@@ -4,7 +4,7 @@
 
   .DESCRIPTION
   Pre-requisites:
-  - User that has an Owner permission to the desired management group to be onboarded.
+  - User that has an Owner / User Access Administrator permission to the desired management group to be onboarded.
   OR
   - User that is a Global Administrator on the tenant.
   ********************************************************************************************
@@ -133,6 +133,16 @@ function checkRole {
         return $false
     }
 }
+## List User's memberships in security groups
+function UserMemberOf {
+    param (
+        [string]
+        [Parameter(Mandatory = $true)]
+        $UserId
+    )
+    $list = Get-MgUserMemberOf -UserId $UserId
+    return $list.Id
+}
 ## Elevate access for root access
 function elevateAccess {
     [string]
@@ -229,13 +239,16 @@ function MGMenu {
         $MG = $MGs[$i - 1]
         $switchBlock += "`n`t$i) '$($MG.DisplayName)'"
     }
+    $switchBlock += "`n`t$i) Exit"
     return $switchBlock
 }
 ## Switch (Select) the desired management group to be onboarded.
 function Switch-MG {
     param (
         [Parameter()]
-        $Option
+        $Option,
+        [Parameter()]
+        $MGs
     )
     $switch = 'switch($Option){'
     for ($i = 1; $i -le $MGs.length; $i++) {
@@ -243,8 +256,25 @@ function Switch-MG {
         $switch += "`n`t$i { '$($MG.DisplayName)' }"
     }
     $switch += "`n}"
-    $MGOption = Invoke-Expression $switch
-    return $MGOption
+    do {
+        if ($Option -notin 1..$i) {
+            Write-Error "You've entered a not valid option.`nPlease Try Again."
+            $Option = Read-Host Option
+        }
+        else {
+            break
+        }
+    } until (
+        $Option -in 1..$i
+    )
+    if ($Option -eq $i) {
+        Write-Host "Exiting..."
+        exit 1
+    }
+    elseif ($Option -in 1..($i - 1)) {
+        $MGOption = Invoke-Expression $switch
+        return $MGOption
+    }
 }
 ## Discovering the objects to be onboarded.
 function onboardingObjects {
@@ -304,7 +334,7 @@ function Select-MG {
     $MGMenuOutput = MGMenu -MGs $MGs
     Write-Host "$MGMenuOutput`n" -ForegroundColor Blue
     $Option = Read-Host Option
-    $ChoosenMG = Switch-MG -Option $Option
+    $ChoosenMG = Switch-MG -Option $Option -MGs $MGs
     Write-Host "`n'$ChoosenMG' Management Group selected.`n" -ForegroundColor Green
     return $ChoosenMG
 }
@@ -360,62 +390,90 @@ catch {
 }
 if ($ARMConnection) {
     Write-Host "Connected to '$($ARMConnection.Context.Tenant.Id)' Tenant." -ForegroundColor green
+    $token = Get-AccessToken -ResourceTypeName 'MSGraph' -ErrorAction SilentlyContinue
+    $MGConnection = Connect-AAD -AccessToken $token.Token -ErrorAction SilentlyContinue
+    if ($MGConnection) {
+        $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id -ErrorAction SilentlyContinue
+    }
     Write-Host "`nListing Management Groups...`n"
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if (!$MGs) {
         Write-Host "Cannot list management groups." -ForegroundColor Red
         Write-Host "`nElevating temporary root permissions..."
-        TempRoot -UserId $ARMConnection.Context.Account.Id
-        $temproot = $true
+        $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
     }
     else {
         $temproot = $false
     }
+    # Get Object ID
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
+    $userMemberships = UserMemberOf -UserId $ObjectId
+    $tempOwner = $false
     if ($MGs) {
         $ChoosenMG = Select-MG -MGs $MGs
-        $MGExpandedObject = Get-MGExpandedObject -ManagementGroup $ChoosenMG
-        $onboardObjects, $SubsList = onboardingObjects -MGExpandedObject $MGExpandedObject
-        $parameters = @{
-            'Name'                 = 'CloudTeamOnboarding'
-            'Location'             = 'westeurope'
-            'TemplateUri'          = "$($gitURI)/main.json"
-            'Verbose'              = $true
-            'gitURI'               = $gitURI
-            'ManagementGroupId'    = $MGExpandedObject.Name
-            'proactivePrincipalID' = $ProactivePrincipalId
-            'readersPrincipalID'   = $ReadersPrincipalId
-            'subsList'             = $SubsList
-        }
-        if ($onboardObjects.Length -gt 0) {
-            $object = @{ 'MGs' = $onboardObjects }
-            $parameters = $parameters + @{'childs' = $object }
-        }
-        try {
-            Write-Host "Starting onboarding deployment...`n"
-            $ARMDeployment = New-AzManagementGroupDeployment @parameters
-        }
-        catch {
-            Write-Error $Error[0]
-        }
-        finally {
-            if ($ARMDeployment) {
-                Write-Host @"
-Onboarding successfully completed.
-Thank you '$($ARMConnection.Context.Account.Id)', and let's cut off the costs !
-"@ -ForegroundColor Green
-            }
-            if ($temproot) {
-                $token = Get-AccessToken -ResourceTypeName 'MSGraph'
-                $MGConnection = Connect-AAD -AccessToken $token.Token
-                if ($MGConnection) {
-                    $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id
-                    Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
+        $ChoosenMGObject = $MGs | Where-Object { $_.DisplayName -eq $ChoosenMG }
+        if ((Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in @("Owner", "User Access Administrator")) }) -or ((Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -in $userMemberships -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "Owner") }))) {
+            if (Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -notin "Owner") }) {
+                if (Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "User Access Administrator") }) {
+                    $rbacAssignment = New-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
+                    if ($rbacAssignment) {
+                        $tempOwner = $true
+                    }
                 }
             }
         }
     }
     else {
-        Write-Error "Failed."
+        Write-Error "No permissions on the '$($ChoosenMG)' Management group. Please try again."
+        exit 1
     }
+    # If owner - proceed
+    # If UAA without owner, temporary assign owner.
+    $MGExpandedObject = Get-MGExpandedObject -ManagementGroup $ChoosenMG
+    $onboardObjects, $SubsList = onboardingObjects -MGExpandedObject $MGExpandedObject
+    $parameters = @{
+        'Name'                 = 'CloudTeamOnboarding'
+        'Location'             = 'westeurope'
+        'TemplateUri'          = "$($gitURI)/main.json"
+        'Verbose'              = $true
+        'gitURI'               = $gitURI
+        'ManagementGroupId'    = $MGExpandedObject.Name
+        'proactivePrincipalID' = $ProactivePrincipalId
+        'readersPrincipalID'   = $ReadersPrincipalId
+        'subsList'             = $SubsList
+    }
+    if ($onboardObjects.Length -gt 0) {
+        $object = @{ 'MGs' = $onboardObjects }
+        $parameters = $parameters + @{'childs' = $object }
+    }
+    try {
+        Write-Host "Starting onboarding deployment...`n"
+        $ARMDeployment = New-AzManagementGroupDeployment @parameters
+    }
+    catch {
+        Write-Error $Error[0]
+    }
+    finally {
+        if ($ARMDeployment) {
+            Write-Host @"
+Onboarding successfully completed.
+Thank you '$($ARMConnection.Context.Account.Id)', and let's cut off the costs !
+"@ -ForegroundColor Green
+        }
+        if ($tempOwner) {
+            $rmOwner = Remove-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
+            if ($rmOwner) {
+                Write-Host "Temporary permissions removed."
+            }
+            else {
+                Write-Error "Temporary permissions removal failed."
+            }
+        }
+        if ($temproot) {
+            Cleanup -ObjectId $(Get-ObjectId -UserId $ARMConnection.Context.Account.Id)
+        }
+    }
+}
+else {
+    Write-Error "Failed."
 }
