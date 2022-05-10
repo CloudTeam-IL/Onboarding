@@ -69,7 +69,7 @@ param(
 
     [string]
     [Parameter()]
-    $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev'
+    $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main'
 )
 #Requires -Modules Az
 
@@ -461,7 +461,12 @@ Thank you '$($ARMConnection.Context.Account.Id)', and let's cut off the costs !
 "@ -ForegroundColor Green
         }
         if ($tempOwner) {
-            $rmOwner = Remove-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
+            try {
+                $rmOwner = Remove-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
+            }
+            catch {
+                Write-Error $Error[0]
+            }
             if ($rmOwner) {
                 Write-Host "Temporary permissions removed."
             }
