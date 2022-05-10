@@ -401,12 +401,12 @@ if ($ARMConnection) {
         Write-Host "Cannot list management groups." -ForegroundColor Red
         Write-Host "`nElevating temporary root permissions..."
         $temproot = TempRoot -UserId $ARMConnection.Context.Account.Id
+        $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     }
     else {
         $temproot = $false
     }
     # Get Object ID
-    $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     $userMemberships = UserMemberOf -UserId $ObjectId
     $tempOwner = $false
     if ($MGs) {
