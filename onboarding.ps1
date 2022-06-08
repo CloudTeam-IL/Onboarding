@@ -69,7 +69,7 @@ param(
 
     [string]
     [Parameter()]
-    $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/main'
+    $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev'
 )
 #Requires -Modules Az
 
@@ -149,7 +149,7 @@ function elevateAccess {
     [Parameter()]
     $APIVersion = '2016-07-01'
 
-    $req = Invoke-AzRestMethod -Path "/providers/Microsoft.Authorization/elevateAccess?api-version=2016-07-01" -Method POST
+    $req = Invoke-AzRestMethod -Path "/providers/Microsoft.Authorization/elevateAccess?api-version=$($APIVersion)" -Method POST
     return $req.StatusCode
 }
 ## Get Role assignments
@@ -237,7 +237,7 @@ function MGMenu {
     $switchBlock = @()
     for ($i = 1; $i -le $MGs.length; $i++) {
         $MG = $MGs[$i - 1]
-        $switchBlock += "`n`t$i) '$($MG.DisplayName)'"
+        $switchBlock += "`n`t$i) $($MG.DisplayName)"
     }
     $switchBlock += "`n`t$i) Exit"
     return $switchBlock
@@ -311,7 +311,6 @@ function onboardingObjects {
                                 }
                             }
                             if ($grandchildSubs) {
-                                $grandChildName = $grandChild.DisplayName
                                 $MGsOnboard += @{id = $grandChildMGId ; subsList = @($grandchildSubs) }
                             }
                         } until ($grandChildMG.Children.Count -gt 0)
@@ -395,6 +394,10 @@ if ($ARMConnection) {
     if ($MGConnection) {
         $ObjectId = Get-ObjectId -UserId $ARMConnection.Context.Account.Id -ErrorAction SilentlyContinue
     }
+    else {
+        Write-Error "Cannot connect to Azure AD.`nExiting..."
+        exit 1
+    }
     Write-Host "`nListing Management Groups...`n"
     $MGs = Get-AzManagementGroup -WarningAction SilentlyContinue
     if (!$MGs) {
@@ -412,9 +415,10 @@ if ($ARMConnection) {
     if ($MGs) {
         $ChoosenMG = Select-MG -MGs $MGs
         $ChoosenMGObject = $MGs | Where-Object { $_.DisplayName -eq $ChoosenMG }
-        if ((Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in @("Owner", "User Access Administrator")) }) -or ((Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -in $userMemberships -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "Owner") }))) {
-            if (Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -notin "Owner") }) {
-                if (Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "User Access Administrator") }) {
+        $roleAssignments = Get-AzRoleAssignment -WarningAction SilentlyContinue
+        if (($roleAssignments | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in @("Owner", "User Access Administrator")) }) -or ((Get-AzRoleAssignment -WarningAction SilentlyContinue | Where-Object { ($_.ObjectId -in $userMemberships -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "Owner") }))) {
+            if ($roleAssignments | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -notin "Owner") }) {
+                if ($roleAssignments | Where-Object { ($_.ObjectId -eq $ObjectId -and $_.Scope -eq $ChoosenMGObject.Id -and $_.RoleDefinitionName -in "User Access Administrator") }) {
                     $rbacAssignment = New-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
                     if ($rbacAssignment) {
                         $tempOwner = $true
@@ -463,15 +467,12 @@ Thank you '$($ARMConnection.Context.Account.Id)', and let's cut off the costs !
         if ($tempOwner) {
             try {
                 $rmOwner = Remove-RoleAssignment -RoleDefinitionName "Owner" -ObjectId $ObjectId -Scope $ChoosenMGObject.Id
+                if ($rmOwner) {
+                    Write-Host "Temporary permissions removed."
+                }
             }
             catch {
-                Write-Error $Error[0]
-            }
-            if ($rmOwner) {
-                Write-Host "Temporary permissions removed."
-            }
-            else {
-                Write-Error "Temporary permissions removal failed."
+                Write-Error "$($Error[0])`nTemporary permissions removal failed."
             }
         }
         if ($temproot) {
