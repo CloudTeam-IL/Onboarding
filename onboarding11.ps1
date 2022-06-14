@@ -1,57 +1,3 @@
-<#
-  .SYNOPSIS
-  CloudTeam & CloudHiro onboarding script for clients
-
-  .DESCRIPTION
-  Pre-requisites:
-  - User that has an Owner / User Access Administrator permission to the desired management group to be onboarded.
-  OR
-  - User that is a Global Administrator on the tenant.
-  ********************************************************************************************
-  The onboarding.ps1 script logs in to a customer's tenant and do the following:
-  - Lists all management groups in which the logged in user has permissions to.
-  - Then, the customer should choose the desired management group in which CloudTeam will have access to it's subscriptions.
-  - If the user has no permissions on any management group, the script will check if the user is a Global Administrator on the tenant, and will elevate access to the root of the tenant ("/") and then it will reload the management groups.
-  - After the listing of management groups, the user will get a prompt and choose the desired management group to be onboarded.
-  - After selecting the management group, an ARM Template which contains all onboarding resources will be deployed at the selected management group.
-  - When everything is completed or failed, a cleanup function will be executed and will cleanup any temporary configurations, permissions and connections.
-
-  .PARAMETER TenantId
-  Tenant ID of the tenant to be onboarded.
-
-  .PARAMETER ReadersPrincipalId
-  Readers Group of users from CloudTeam.AI Experts.
-
-  .PARAMETER ProactivePrincipalId
-  Proactive Group of users from CloudTeam.AI Experts.
-
-  .PARAMETER gitURI
-  Git URI for all ARM templates. Don't change the default value !
-
-  .EXAMPLE
-  PS> ./Onboarding.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -ReadersPrincipalId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -ProactivePrincipalId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-
-  .EXAMPLE
-  PS> ./Onboarding.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -ReadersPrincipalId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-
-#>
-
-######################################################################################################################
-
-#  Copyright 2022 CloudTeam & CloudHiro Inc. or its affiliates. All Rights Re`ed.                                    #
-
-#  You may not use this file except in compliance with the License.                                                  #
-
-#  https://www.cloudhiro.com/AWS/TermsOfUse.php                                                                      #
-
-#  This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES                                                  #
-
-#  OR CONDITIONS OF ANY KIND, express or implied. See the License for the specific language governing permissions    #
-
-#  and limitations under the License.                                                                                #
-
-######################################################################################################################
-
 param(
     [string]
     [Parameter(Mandatory = $true)]
@@ -71,8 +17,6 @@ param(
     [Parameter()]
     $gitURI = 'https://raw.githubusercontent.com/CloudTeam-IL/Onboarding/dev'
 )
-#Requires -Modules Az
-
 ## Access Token
 function Get-AccessToken {
     param (
